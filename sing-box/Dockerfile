@@ -1,4 +1,5 @@
 FROM golang:1.21.6-alpine as aaa
+ENV VERSION=${VERSION}
 RUN CGO_ENABLED=0 go install -v -trimpath -tags "with_quic with_acme with_utls" \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w" \
     github.com/sagernet/sing-box/cmd/sing-box@$VERSION
