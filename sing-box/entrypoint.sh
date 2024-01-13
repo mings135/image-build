@@ -11,14 +11,16 @@ TUIC_JSON=${CONFIG_DIR}/tuic.json
 HYSTERIA2_JSON=${CONFIG_DIR}/hysteria2.json
 # client config file path
 CLIENT_FILE=${CONFIG_DIR}/client.json
-CLIENT_1_8_FILE=${CONFIG_DIR}/client-1.8.json
-CLIENT_1_8_PATCH_DNS_JSON=${CONFIG_DIR}/client-1-8-patch-dns.json
-CLIENT_1_8_PATCH_ROUTE_JSON=${CONFIG_DIR}/client-1-8-patch-route.json
 CLIENT_TROJAN_JSON=${CONFIG_DIR}/client-trojan.json
 CLIENT_VLESS_JSON=${CONFIG_DIR}/client-vless.json
 CLIENT_TUIC_JSON=${CONFIG_DIR}/client-tuic.json
 CLIENT_HYSTERIA2_JSON=${CONFIG_DIR}/client-hysteria2.json
 CLIENT_DNS_RULES_JSON=${CONFIG_DIR}/client-dns-rules.json
+# client >= 1.8 config file path
+CLIENT_1_8_FILE=${CONFIG_DIR}/client-1.8.json
+CLIENT_1_8_DNS_RULES_JSON=${CONFIG_DIR}/client-1-8-dns-rules.json
+CLIENT_1_8_ROUTE_JSON=${CONFIG_DIR}/client-1-8-route.json
+CLIENT_1_8_EXPERIMENTAL_CACHE_FILE_JSON=${CONFIG_DIR}/client-1-8-experimental-cache-file.json
 
 ## server
 # create trojan.json
@@ -510,27 +512,43 @@ create_client_1_8_file() {
    /bin/cp -a ${CLIENT_FILE} ${CLIENT_1_8_FILE}
 }
 
-create_client_1_8_patch_dns_json() {
-    cat >${CLIENT_1_8_PATCH_DNS_JSON} <<"EOF"
+create_client_1_8_experimental_cache_file_json() {
+    cat >${CLIENT_1_8_EXPERIMENTAL_CACHE_FILE_JSON} <<"EOF"
 {
-    "type": "logical",
-    "mode": "and",
-    "rules": [
-        {
-            "rule_set": "geosite-geolocation-!cn",
-            "invert": true
-        },
-        {
-            "rule_set": "geosite-cn",
-        }
-    ],
-    "server": "aliyun"
+    "enabled": true,
+    "path": "cache.db",
+    "store_fakeip": true
 }
 EOF
 }
 
-create_client_1_8_patch_route_json() {
-    cat >${CLIENT_1_8_PATCH_ROUTE_JSON} <<"EOF"
+create_client_1_8_dns_rules_json() {
+    cat >${CLIENT_1_8_DNS_RULES_JSON} <<"EOF"
+[
+    {
+        "outbound": "any",
+        "server": "aliyun"
+    },
+    {
+        "type": "logical",
+        "mode": "and",
+        "rules": [
+            {
+                "rule_set": "geosite-geolocation-!cn",
+                "invert": true
+            },
+            {
+                "rule_set": "geosite-cn"
+            }
+        ],
+        "server": "aliyun"
+    }
+]
+EOF
+}
+
+create_client_1_8_route_json() {
+    cat >${CLIENT_1_8_ROUTE_JSON} <<"EOF"
 {
     "rule_set": [
         {
@@ -684,7 +702,6 @@ generate_client() {
     # change dns rule if not fakeip
     if [ ${CLIENT_DNS_MODE} != 'fakeip' ]; then
         yq -ioj 'del(.dns.servers[] | select(.tag == "remote"))' ${CLIENT_FILE}
-        yq -ioj 'del(.dns.rules[] | select(.server == "remote"))' ${CLIENT_FILE}
         yq -ioj 'del(.dns.fakeip)' ${CLIENT_FILE}
         tmp_var=${CLIENT_DNS_RULES_JSON} yq -ioj '.dns.rules = load(strenv(tmp_var))' ${CLIENT_FILE}
     fi
@@ -693,14 +710,16 @@ generate_client() {
 }
 
 generate_client_1_8() {
-    create_client_1_8_patch_dns_json
-    create_client_1_8_patch_route_json
+    create_client_1_8_dns_rules_json
+    create_client_1_8_route_json
+    create_client_1_8_experimental_cache_file_json
     create_client_1_8_file
     if [ ${CLIENT_DNS_MODE} != 'fakeip' ]; then
-        tmp_var=${CLIENT_1_8_PATCH_DNS_JSON} yq -ioj '.dns.rules = load(strenv(tmp_var))' ${CLIENT_1_8_FILE}
+        tmp_var=${CLIENT_1_8_DNS_RULES_JSON} yq -ioj '.dns.rules = load(strenv(tmp_var))' ${CLIENT_1_8_FILE}
     fi
-    tmp_var=${CLIENT_1_8_PATCH_ROUTE_JSON} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_1_8_FILE}
-    rm -f ${CLIENT_1_8_PATCH_DNS_JSON} ${CLIENT_1_8_PATCH_ROUTE_JSON}
+    tmp_var=${CLIENT_1_8_ROUTE_JSON} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_1_8_FILE}
+    tmp_var=${CLIENT_1_8_EXPERIMENTAL_CACHE_FILE_JSON} yq -ioj '.experimental.cache_file = load(strenv(tmp_var))' ${CLIENT_1_8_FILE}
+    rm -f ${CLIENT_1_8_DNS_RULES_JSON} ${CLIENT_1_8_ROUTE_JSON} ${CLIENT_1_8_EXPERIMENTAL_CACHE_FILE_JSON}
 }
 
 init_variables() {
