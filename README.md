@@ -6,6 +6,12 @@
 
 ## Sing-box
 
+**自动制作 sing-box image：**
+
+- 源码来源：https://github.com/SagerNet/sing-box
+
+
+
 ### Server
 
 **docker compose 部署：**
