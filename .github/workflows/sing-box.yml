@@ -3,14 +3,14 @@ name: sing-box
 on:
   push:
     tags:
-      - sing-box:v*
+      - sing-box/v*
   workflow_dispatch:
     inputs:
       tag:
         description: "The tag version you want to build"
         required: true
         type: string
-        default: "sing-box:v1.7.8"
+        default: "sing-box/v1.7.8"
 
 env:
   TZ: Asia/Shanghai
@@ -30,10 +30,10 @@ jobs:
           else
             tmp_tag="${{ github.ref_name }}"
           fi
-          tmp_name=$(echo ${tmp_tag} | awk -F ':' '{print $1}')
-          tmp_version=$(echo ${tmp_tag} | awk -F ':' '{print $2}')
+          tmp_name=$(echo ${tmp_tag} | awk -F '/' '{print $1}')
+          tmp_version=$(echo ${tmp_tag} | awk -F '/' '{print $2}')
           echo "tag_latest=${{ secrets.DOCKERHUB_REGISTRY }}/${tmp_name}:latest" >> $GITHUB_OUTPUT
-          echo "tag_version=${{ secrets.DOCKERHUB_REGISTRY }}/${tmp_tag}" >> $GITHUB_OUTPUT
+          echo "tag_version=${{ secrets.DOCKERHUB_REGISTRY }}/${tmp_name}:${tmp_version}" >> $GITHUB_OUTPUT
           echo "build_name=${tmp_name}" >> $GITHUB_OUTPUT
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
 
