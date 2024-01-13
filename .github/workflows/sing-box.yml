@@ -22,6 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       
+      # Get the required variables
       - name: Get my variable
         id: myval
         run: |
@@ -37,6 +38,7 @@ jobs:
           echo "build_name=${tmp_name}" >> $GITHUB_OUTPUT
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
 
+      # build and push images
       - name: Checkout
         uses: actions/checkout@v3
       - name: Set up QEMU
@@ -58,3 +60,11 @@ jobs:
           tags: |
             ${{ steps.myval.outputs.tag_version }}
             ${{ steps.myval.outputs.tag_latest }}
+
+      # delete history workflow
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.MY_TOKEN }}
+          retain_days: 1
+          keep_minimum_runs: 3
