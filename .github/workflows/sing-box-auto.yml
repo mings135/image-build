@@ -1,0 +1,62 @@
+name: sing-box-auto
+
+on:
+  # schedule:
+  #   - cron:  '6 0 * * *'
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Shanghai
+  TAG_NAME: sing-box
+  REMOTE_TAGS_FILE: sing-box.json
+  REMOTE_TAGS_URL: https://api.github.com/repos/SagerNet/sing-box/tags
+  LOCAL_TAGS_FILE: image-build.json
+  LOCAL_TAGS_URL: https://api.github.com/repos/mings135/image-build/tags?per_page=100
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Get variables
+        id: myval
+        run: |
+          sudo -E apt-get update && sudo -E apt-get install -y yq curl
+          curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
+          curl -fsSL ${REMOTE_TAGS_URL} > ${REMOTE_TAGS_FILE}
+          yq -rioj '.[].name' ${LOCAL_TAGS_FILE}
+          tmp_latest_name=$(yq -roj '.[0].name' ${REMOTE_TAGS_FILE})
+          tag_all="${TAG_NAME}/${tmp_latest_name}"
+          if echo "${tag_all}" | grep -Eqi 'v([[:digit:]]*\.){2}[[:digit:]]*$' && ! grep -Eqi "^${tag_all}$" ${LOCAL_TAGS_FILE}; then
+            echo "release_status=yes" >> $GITHUB_OUTPUT
+          else
+            echo "release_status=no" >> $GITHUB_OUTPUT
+          fi
+          echo "release_tag=${tag_all}" >> $GITHUB_OUTPUT
+
+      # create tag release
+      - name: Upload firmware
+        uses: softprops/action-gh-release@v1
+        if: "steps.myval.outputs.release_status == 'yes' && !cancelled()"
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        with:
+          tag_name: "${{ steps.myval.outputs.release_tag }}"
+
+      # 删除历史工作流
+      - name: Delete workflow runs
+        uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.MY_TOKEN }}
+          retain_days: 1
+          keep_minimum_runs: 3
+
+      # 删除历史版本
+      - name: Delete older Releases
+        uses: dev-drprasad/delete-older-releases@v0.2.1
+        if: "!cancelled()"
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        with:
+          keep_latest: 3
+          delete_tags: true

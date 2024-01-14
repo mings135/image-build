@@ -668,8 +668,8 @@ generate_client() {
     # 创建修改 client 配置
     create_client_file
     tmp_var=${LOG_LEVEL} yq -ioj '.log.level = strenv(tmp_var)' ${CLIENT_FILE}
-    proxy_index=$(yq -Moj '.outbounds[] | select(.tag == "proxy") | key' ${CLIENT_FILE})
-    auto_index=$(yq -Moj '.outbounds[] | select(.tag == "auto") | key' ${CLIENT_FILE})
+    proxy_index=$(yq -roj '.outbounds[] | select(.tag == "proxy") | key' ${CLIENT_FILE})
+    auto_index=$(yq -roj '.outbounds[] | select(.tag == "auto") | key' ${CLIENT_FILE})
     # add client trojan config
     if [ ${PORT_TROJAN} -ne 0 ]; then
         tmp_var=${CLIENT_TROJAN_JSON} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
