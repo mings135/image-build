@@ -21,7 +21,7 @@ jobs:
       - name: Get variables
         id: myval
         run: |
-          sudo -E apt-get update && sudo -E apt-get install -y yq curl
+          sudo -E curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo -E chmod +x /usr/local/bin/yq
           curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
           curl -fsSL ${REMOTE_TAGS_URL} > ${REMOTE_TAGS_FILE}
           yq -rioj '.[].name' ${LOCAL_TAGS_FILE}
