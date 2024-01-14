@@ -42,6 +42,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
           tag_name: "${{ steps.myval.outputs.release_tag }}"
+          body: "${{ steps.myval.outputs.release_tag }}"
 
       # 删除历史工作流
       - name: Delete workflow runs
