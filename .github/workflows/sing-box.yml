@@ -39,8 +39,6 @@ jobs:
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
 
       # build and push images
-      - name: Checkout
-        uses: actions/checkout@v3
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
