@@ -36,11 +36,9 @@ docker compose logs | grep -E 'secret'
 
 # 查看 sing-box client.json config
 docker compose exec sing-box yq -oj /etc/sing-box/client.json
-docker compose exec sing-box yq -oj /etc/sing-box/client-1.8.json
 
 # 查看 sing-box client.json config about outbounds
 docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client.json
-docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client-1.8.json
 
 # docker 运行 sing-box
 docker run -d --name sing-box \
