@@ -9,13 +9,10 @@
 - debian
 
 ```shell
-list_file='/etc/apt/sources.list.d/docker.list'
-gpg_file='/etc/apt/keyrings/docker-archive-keyring.gpg'
 apt-get update && apt-get install -y ca-certificates curl
 mkdir -p /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --yes --dearmor -o ${gpg_file}
-echo "deb [arch=$(dpkg --print-architecture) signed-by=${gpg_file}] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > ${list_file}
-sed -i 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' ${list_file}
+curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --yes --dearmor -o /etc/apt/keyrings/docker-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
 apt-get update && apt-get install -y docker-ce docker-compose-plugin
 ```
 
@@ -26,9 +23,6 @@ apt-get update && apt-get install -y docker-ce docker-compose-plugin
 ```shell
 yum install -y yum-utils
 yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-sed -e 's+download.docker.com+mirrors.tuna.tsinghua.edu.cn/docker-ce+' \
-	-e '/^gpgcheck=1/s/gpgcheck=1/gpgcheck=0/' \
-	-i /etc/yum.repos.d/docker-ce.repo
 yum install -y docker-ce docker-compose-plugin
 ```
 
