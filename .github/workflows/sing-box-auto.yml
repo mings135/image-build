@@ -9,7 +9,7 @@ env:
   TZ: Asia/Shanghai
   TAG_NAME: sing-box
   REMOTE_TAGS_FILE: sing-box.json
-  REMOTE_TAGS_URL: https://api.github.com/repos/SagerNet/sing-box/tags?per_page=30
+  REMOTE_TAGS_URL: https://api.github.com/repos/SagerNet/sing-box/tags?per_page=60
   LOCAL_TAGS_FILE: image-build.json
   LOCAL_TAGS_URL: https://api.github.com/repos/mings135/image-build/tags
 
@@ -25,7 +25,7 @@ jobs:
           curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
           curl -fsSL ${REMOTE_TAGS_URL} > ${REMOTE_TAGS_FILE}
           yq -rioj '.[].name' ${LOCAL_TAGS_FILE}
-          for i in $(seq 0 20)
+          for i in $(seq 0 50)
           do
             tmp_latest_name=$(tmp_key=$i yq -roj '.[env(tmp_key)].name' ${REMOTE_TAGS_FILE})
             if [ "${tmp_latest_name}" = 'null' ]; then
