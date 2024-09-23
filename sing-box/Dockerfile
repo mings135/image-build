@@ -1,10 +1,10 @@
-FROM golang:1.21.6-alpine as aaa
+FROM golang:1.23.1-alpine as aaa
 ARG VERSION
 RUN CGO_ENABLED=0 go install -v -trimpath -tags "with_quic with_acme with_utls" \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
     github.com/sagernet/sing-box/cmd/sing-box@$VERSION
 
-FROM alpine:3.19.0
+FROM alpine:3.20.3
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box
 RUN apk upgrade --no-cache \
     && apk add --no-cache pwgen tzdata ca-certificates yq curl bind-tools

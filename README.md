@@ -45,12 +45,12 @@ version: "3.8"
 services:
   sing-box:
     container_name: sing-box
-    image: mings135/sing-box:v1.7.8
+    image: mings135/sing-box:v1.9.6
     restart: always
     environment:
       - TZ=Asia/Shanghai
-      - DOMAIN=a.example.com
-      - EMAIL=xx@gmail.com
+      - DOMAIN=example.com
+      - EMAIL=user@gmail.com
       - PASSWORD=pwd
       - PORT_TROJAN=443
       - CLIENT_CLASH_PORT=9090
@@ -95,11 +95,6 @@ echo "net.ipv4.tcp_congestion_control=bbr" >> /etc/sysctl.d/90-bbr.conf
 echo "net.core.rmem_max=16777216" >> /etc/sysctl.d/90-bbr.conf
 sysctl --system
 
-# 临时开启 BBR
-sysctl -w net.core.default_qdisc=fq
-sysctl -w net.ipv4.tcp_congestion_control=bbr
-sysctl -w net.core.rmem_max=16777216
-
 # 运行
 docker compose up -d
 
@@ -115,14 +110,14 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 # docker 运行 sing-box
 docker run -d --name sing-box \
   -e TZ=Asia/Shanghai \
-  -e DOMAIN=x.x.top \
-  -e EMAIL=xx@gmail.com \
+  -e DOMAIN=example.com \
+  -e EMAIL=user@gmail.com \
   -e PASSWORD=pwd \
   -e PORT_TROJAN=443 \
   -v sing-box-local:/root/.local \
   --network host \
   --restart always \
-  mings135/sing-box:v1.7.8
+  mings135/sing-box:latest
 ```
 
 
