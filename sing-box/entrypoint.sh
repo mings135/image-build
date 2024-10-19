@@ -638,11 +638,18 @@ generate_client_config() {
         tmp_var="127.0.0.1:${CLIENT_CLASH_PORT}" yq -ioj '.experimental.clash_api.external_controller = strenv(tmp_var)' ${CLIENT_FILE}
         tmp_var=${CLIENT_CLASH_UI} yq -ioj '.experimental.clash_api.external_ui = strenv(tmp_var)' ${CLIENT_FILE}
     fi
-    # add client cache_file config
+    # add client cache_file config about sing-box v1.8.0
     if [ $(echo "${VERSION} >= 1.8" | bc) -eq 1 ]; then
         tmp_var="true" yq -ioj '.experimental.cache_file.enabled = env(tmp_var)' ${CLIENT_FILE}
         tmp_var="cache.db" yq -ioj '.experimental.cache_file.path = strenv(tmp_var)' ${CLIENT_FILE}
         tmp_var="true" yq -ioj '.experimental.cache_file.store_fakeip = env(tmp_var)' ${CLIENT_FILE}
+    fi
+    # Deprecated changes about sing-box v1.10.0
+    if [ $(echo "${VERSION} >= 1.10" | bc) -eq 1 ]; then
+        yq -ioj 'del(.inbounds[0].inet4_address)' ${CLIENT_FILE}
+        yq -ioj 'del(.inbounds[0].inet6_address)' ${CLIENT_FILE}
+        yq -ioj '.inbounds[0].address[0] = "172.19.0.1/30"' ${CLIENT_FILE}
+        yq -ioj '.inbounds[0].address[1] = "fdfe:dcba:9876::1/126"' ${CLIENT_FILE}
     fi
     # Delete temporary files
     rm -f ${CLIENT_TROJAN} ${CLIENT_VLESS} ${CLIENT_TUIC} ${CLIENT_HYSTERIA2} ${CLIENT_ROUTE}
