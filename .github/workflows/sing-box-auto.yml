@@ -45,7 +45,7 @@ jobs:
 
       # create tag release
       - name: Upload firmware
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         if: "steps.myval.outputs.release_status == 'yes' && !cancelled()"
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
@@ -63,7 +63,7 @@ jobs:
 
       # 删除历史版本
       - name: Delete older Releases
-        uses: dev-drprasad/delete-older-releases@v0.2.1
+        uses: dev-drprasad/delete-older-releases@v0.3.4
         if: "!cancelled()"
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
