@@ -14,8 +14,8 @@ variable_by_const() {
 }
 
 variable_by_env() {
-    CERT_SOURCE="${CERT_SOURCE-'sing-box'}"
-    NGINX_client_max_body_size="${NGINX_client_max_body_size-'50m'}"
+    CERT_SOURCE="${CERT_SOURCE-sing-box}"
+    NGINX_client_max_body_size="${NGINX_client_max_body_size-50m}"
 }
 
 variable_by_auto() {
