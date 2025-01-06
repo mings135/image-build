@@ -410,8 +410,8 @@ client_create_config() {
             "tag": "tun-in",
             "interface_name": "tun0",
             "inet4_address": "172.19.0.1/30",
-            "inet6_address": "fdfe:dcba:9876::1/126",
-            "mtu": 9000,
+            "inet6_address": "fdfe::1/126",
+            "mtu": 1492,
             "auto_route": true,
             "strict_route": true,
             "stack": "system",
@@ -423,10 +423,7 @@ client_create_config() {
         {
             "type": "selector",
             "tag": "proxy",
-            "outbounds": [
-                "auto"
-            ],
-            "default": "auto",
+            "outbounds": [],
             "interrupt_exist_connections": false
         },
         {
@@ -487,6 +484,13 @@ client_create_config() {
             "inet6_range": "fc00::/18"
         },
         "independent_cache": true
+    },
+    "experimental": {
+        "cache_file": {
+            "enabled": true,
+            "path": "cache.db",
+            "store_fakeip": true
+        }
     }
 }
 EOF
@@ -500,19 +504,22 @@ client_create_route() {
             "type": "remote",
             "tag": "geoip-cn",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs"
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+            "download_detour": "proxy"
         },
         {
             "type": "remote",
             "tag": "geosite-cn",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs"
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+            "download_detour": "proxy"
         },
         {
             "type": "remote",
             "tag": "geosite-geolocation-!cn",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs"
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
+            "download_detour": "proxy"
         }
     ],
     "rules": [
@@ -591,11 +598,6 @@ client_generate_config() {
     client_create_route
     tmp_var=${CLIENT_ROUTE} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_FILE}
     rm ${CLIENT_ROUTE}
-
-    # client cache_file
-    tmp_var="true" yq -ioj '.experimental.cache_file.enabled = env(tmp_var)' ${CLIENT_FILE}
-    tmp_var="cache.db" yq -ioj '.experimental.cache_file.path = strenv(tmp_var)' ${CLIENT_FILE}
-    tmp_var="true" yq -ioj '.experimental.cache_file.store_fakeip = env(tmp_var)' ${CLIENT_FILE}
     
     # client trojan
     if [ ${TROJAN_PORT} -ne 0 ]; then
@@ -667,7 +669,7 @@ client_generate_config() {
         yq -ioj 'del(.inbounds[0].inet4_address)' ${CLIENT_FILE}
         yq -ioj 'del(.inbounds[0].inet6_address)' ${CLIENT_FILE}
         yq -ioj '.inbounds[0].address[0] = "172.19.0.1/30"' ${CLIENT_FILE}
-        yq -ioj '.inbounds[0].address[1] = "fdfe:dcba:9876::1/126"' ${CLIENT_FILE}
+        yq -ioj '.inbounds[0].address[1] = "fdfe::1/126"' ${CLIENT_FILE}
     fi 
 }
 
