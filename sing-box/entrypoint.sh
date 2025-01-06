@@ -484,13 +484,6 @@ client_create_config() {
             "inet6_range": "fc00::/18"
         },
         "independent_cache": true
-    },
-    "experimental": {
-        "cache_file": {
-            "enabled": true,
-            "path": "cache.db",
-            "store_fakeip": true
-        }
     }
 }
 EOF
@@ -598,6 +591,11 @@ client_generate_config() {
     client_create_route
     tmp_var=${CLIENT_ROUTE} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_FILE}
     rm ${CLIENT_ROUTE}
+
+    # client cache_file
+    tmp_var="true" yq -ioj '.experimental.cache_file.enabled = env(tmp_var)' ${CLIENT_FILE}
+    tmp_var="cache.db" yq -ioj '.experimental.cache_file.path = strenv(tmp_var)' ${CLIENT_FILE}
+    tmp_var="true" yq -ioj '.experimental.cache_file.store_fakeip = env(tmp_var)' ${CLIENT_FILE}
     
     # client trojan
     if [ ${TROJAN_PORT} -ne 0 ]; then
