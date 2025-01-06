@@ -5,4 +5,4 @@ RUN chmod 755 /usr/bin/entrypoint.sh
 
 EXPOSE 443/tcp
 ENTRYPOINT ["/usr/bin/entrypoint.sh"]
-CMD ["nginx" "-g" "daemon off;"]
+CMD ["nginx", "-g", "daemon off;"]
