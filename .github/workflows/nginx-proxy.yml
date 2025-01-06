@@ -3,14 +3,14 @@ name: sing-box
 on:
   push:
     tags:
-      - sing-box/v*
+      - nginx-proxy/*-alpine
   workflow_dispatch:
     inputs:
       tag:
         description: "The tag version you want to build"
         required: true
         type: string
-        default: "sing-box/v1.7.8"
+        default: "nginx-proxy/1.27.3-alpine"
 
 env:
   TZ: Asia/Shanghai
@@ -37,6 +37,7 @@ jobs:
           echo "tag_version=${{ secrets.DOCKERHUB_REGISTRY }}/${tmp_name}:${tmp_version}" >> $GITHUB_OUTPUT
           echo "build_name=${tmp_name}" >> $GITHUB_OUTPUT
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
+          sed -i "s/FROM nginx.*alpine/FROM nginx:${tmp_version}/" ./nginx-proxy/Dockerfile
 
       # build and push images
       - name: Set up QEMU
