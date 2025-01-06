@@ -122,7 +122,7 @@ echo "net.ipv4.tcp_congestion_control=bbr"; \
 sysctl --system
 
 # 查看账密等信息（如果没有设置相应的变量，重启后会重置）
-docker compose logs | grep -E 'secret'
+docker compose logs | grep -Ei 'network|secret'
 
 # 查看 sing-box client.json config
 docker compose exec sing-box yq -oj /etc/sing-box/client.json
