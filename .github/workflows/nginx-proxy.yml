@@ -1,4 +1,4 @@
-name: sing-box
+name: nginx-proxy
 
 on:
   push:
