@@ -103,7 +103,7 @@ services:
 | TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(无任何其他服务开启) |
 | NAIVE_PORT          | Naive 端口，默认 0(关闭)                             |
 | VLESS_PORT          | Vless 端口，默认 0(关闭)                             |
-| TUICPORT            | Tuic 端口，默认 0(关闭)                              |
+| TUIC_PORT           | Tuic 端口，默认 0(关闭)                              |
 | HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                         |
 | HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100               |
 | HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100               |
@@ -146,6 +146,8 @@ docker run -d --name sing-box \
 
 **Windows bat  启动脚本 sing-box.bat**
 
+- 创建 bat 后再创建一个快捷方式，修改快捷方式高级属性，用管理员方式运行
+
  ```bat
  cd /d %~dp0
  start /min sing-box.exe run -c client.json
@@ -173,8 +175,8 @@ services:
       - 443:443
     environment:
       - TZ=Asia/Shanghai
-      - PROXY1=web,aa.example.com,10.1.1.10:80
-      - PROXY2=app,bb.example.com,10.1.1.20:443
+      - PROXY1=app,aa.example.com,10.1.1.10:80
+      - PROXY2=web,bb.example.com,10.1.1.20:443
     networks:
       - net
     volumes:
