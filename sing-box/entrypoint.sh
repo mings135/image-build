@@ -23,32 +23,32 @@ variable_by_const() {
 
 variable_by_env() {
     # 获取变量, 否则自动生成
-    USERNAME="${USERNAME:-$(pwgen 4 1 -s -0)}"
-    PASSWORD="${PASSWORD:-$(pwgen 16 1 -s)}"
-    UUID="${UUID:-$(sing-box generate uuid)}"
-    LEVEL="${LEVEL:-warn}"
-    LABEL="${LABEL:-$(pwgen 4 1 -s -0 -A)}"
+    USERNAME=${USERNAME:-"$(pwgen 4 1 -s -0)"}
+    PASSWORD=${PASSWORD:-"$(pwgen 16 1 -s)"}
+    UUID=${UUID:-"$(sing-box generate uuid)"}
+    LEVEL=${LEVEL:-"warn"}
+    LABEL=${LABEL:-"$(pwgen 4 1 -s -0 -A)"}
     # 获取变量, 否则默认为 0, 表示不开启
-    TROJAN_PORT="${TROJAN_PORT:-0}"
-    NAIVE_PORT="${NAIVE_PORT:-0}"
-    VLESS_PORT="${VLESS_PORT:-0}"
-    TUIC_PORT="${TUIC_PORT:-0}"
-    HYSTERIA2_PORT="${HYSTERIA2_PORT:-0}"
+    TROJAN_PORT=${TROJAN_PORT:-"0"}
+    NAIVE_PORT=${NAIVE_PORT:-"0"}
+    VLESS_PORT=${VLESS_PORT:-"0"}
+    TUIC_PORT=${TUIC_PORT:-"0"}
+    HYSTERIA2_PORT=${HYSTERIA2_PORT:-"0"}
     # 额外配置
-    TROJAN_FALLBACK_SERVER="${TROJAN_FALLBACK_SERVER:-127.0.0.1}"
-    TROJAN_FALLBACK_PORT="${TROJAN_FALLBACK_PORT:-0}"
-    HYSTERIA_UP_SPEED="${HYSTERIA_UP_SPEED:-100}"
-    HYSTERIA_DOWN_SPEED="${HYSTERIA_DOWN_SPEED:-100}"
+    TROJAN_FALLBACK_SERVER=${TROJAN_FALLBACK_SERVER:-"127.0.0.1"}
+    TROJAN_FALLBACK_PORT=${TROJAN_FALLBACK_PORT:-"0"}
+    HYSTERIA_UP_SPEED=${HYSTERIA_UP_SPEED:-"100"}
+    HYSTERIA_DOWN_SPEED=${HYSTERIA_DOWN_SPEED:-"100"}
     # 客户端配置
-    CLIENT_CLASH_PORT="${CLIENT_CLASH_PORT:-0}"
-    CLIENT_CLASH_UI="${CLIENT_CLASH_UI:-ui}"
+    CLIENT_CLASH_PORT=${CLIENT_CLASH_PORT:-"0"}
+    CLIENT_CLASH_UI=${CLIENT_CLASH_UI:-"ui"}
     # 检查
-    CHECK_DNS="${CHECK_DNS:-1}"
+    CHECK_DNS=${CHECK_DNS:-"1"}
 }
 
 varialbe_by_auto() {
-    ADDRESS_IPV4="$(curl -fsL4 ifconfig.me || echo '')"
-    ADDRESS_IPV6="$(curl -fsL6 ifconfig.me || echo '')"
+    ADDRESS_IPV4=$(curl -fsL4 ifconfig.me || echo '')
+    ADDRESS_IPV6=$(curl -fsL6 ifconfig.me || echo '')
 }
 
 compare_version_ge() {
@@ -722,9 +722,7 @@ main() {
             check_domain
         fi
         server_generate_config
-        if [ ${DOMAIN} ]; then
-            client_generate_config
-        fi
+        client_generate_config
         echo "Network ipv4 address: ${ADDRESS_IPV4}"
         echo "Network ipv6 address: ${ADDRESS_IPV6}"
         echo "Secret username: ${USERNAME}"
