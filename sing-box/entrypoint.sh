@@ -69,24 +69,6 @@ compare_version_ge() {
     fi
 }
 
-compare_version_le() {
-    local ver1_major=$(echo $1 | awk -F '.' '{print $1}')
-    local ver1_minor=$(echo $1 | awk -F '.' '{print $2}')
-    local ver2_major=$(echo $2 | awk -F '.' '{print $1}')
-    local ver2_minor=$(echo $2 | awk -F '.' '{print $2}')
-    if [ ${ver1_major} -lt ${ver2_major} ]; then
-        return 0
-    elif [ ${ver1_major} -eq ${ver2_major} ]; then
-        if [ ${ver1_minor} -le ${ver2_minor} ]; then
-            return 0
-        else
-            return 1
-        fi
-    else
-        return 1
-    fi
-}
-
 # ------ server ------
 server_create_trojan() {
     cat >${SERVER_TROJAN} <<"EOF"
@@ -673,7 +655,7 @@ client_generate_config() {
 
 check_variable() {
     # 检查 version
-    if compare_version_le "${VERSION}" "1.7"; then
+    if ! compare_version_ge "${VERSION}" "1.8"; then
         echo "Sing-box version need >= 1.8"
         exit 1
     fi
