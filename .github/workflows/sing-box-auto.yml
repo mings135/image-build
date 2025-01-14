@@ -21,6 +21,7 @@ jobs:
       - name: Get variables
         id: myval
         run: |
+          set -e
           sudo -E curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo -E chmod +x /usr/local/bin/yq
           curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
           curl -fsSL ${REMOTE_TAGS_URL} > ${REMOTE_TAGS_FILE}
@@ -43,30 +44,26 @@ jobs:
           fi
           echo "release_tag=${tag_all}" >> $GITHUB_OUTPUT
 
-      # create tag release
-      - name: Upload firmware
+      - name: Create Release
         uses: softprops/action-gh-release@v2
-        if: "steps.myval.outputs.release_status == 'yes' && !cancelled()"
+        if: steps.myval.outputs.release_status == 'yes'
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
           tag_name: "${{ steps.myval.outputs.release_tag }}"
           body: "${{ steps.myval.outputs.release_tag }}"
 
-      # 删除历史工作流
-      - name: Delete workflow runs
+      - name: Delete Workflow
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.MY_TOKEN }}
           retain_days: 1
           keep_minimum_runs: 3
 
-      # 删除历史版本
-      - name: Delete older Releases
+      - name: Delete Release
         uses: dev-drprasad/delete-older-releases@v0.3.4
-        if: "!cancelled()"
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         with:
-          keep_latest: 6
+          keep_latest: 3
           delete_tags: true

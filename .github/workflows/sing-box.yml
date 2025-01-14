@@ -59,8 +59,7 @@ jobs:
             ${{ steps.myval.outputs.tag_version }}
             ${{ steps.myval.outputs.tag_latest }}
 
-      # delete history workflow
-      - name: Delete workflow runs
+      - name: Delete Workflow
         uses: Mattraks/delete-workflow-runs@v2
         with:
           token: ${{ secrets.MY_TOKEN }}
