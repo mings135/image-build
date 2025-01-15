@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       # Get the required variables
       - name: Get my variable
         id: myval
