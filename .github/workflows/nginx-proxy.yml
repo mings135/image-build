@@ -12,18 +12,15 @@ on:
         type: string
         default: "nginx-proxy/1.27.3-alpine"
 
-env:
-  TZ: Asia/Shanghai
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Get the required variables
-      - name: Get my variable
+      - name: Build Variables
         id: myval
         run: |
           if [ "${{ github.event.inputs.tag }}" ]; then
@@ -39,7 +36,6 @@ jobs:
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
           sed -i "s/FROM nginx.*alpine/FROM nginx:${tmp_version}/" ./nginx-proxy/Dockerfile
 
-      # build and push images
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -49,7 +45,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and Push
         uses: docker/build-push-action@v6
         with:
           context: ./${{ steps.myval.outputs.build_name }}

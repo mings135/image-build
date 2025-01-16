@@ -3,10 +3,11 @@ ARG VERSION TARGETOS TARGETARCH
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 ENV CGO_ENABLED=0
-RUN go install -v -trimpath -tags "with_quic with_acme with_utls" \
+RUN echo "${GOOS} ${GOARCH}"
+RUN go build -v -trimpath -tags "with_quic with_acme with_utls" \
     -o /go/bin/sing-box \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
-    github.com/sagernet/sing-box/cmd/sing-box@$VERSION
+    ./sing-box/cmd/sing-box
 
 FROM --platform=$TARGETPLATFORM alpine:3.21.0
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box

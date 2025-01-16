@@ -12,18 +12,15 @@ on:
         type: string
         default: "sing-box/v1.10.6"
 
-env:
-  TZ: Asia/Shanghai
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      # Get the required variables
-      - name: Get my variable
+      - name: Build Variables
         id: myval
         run: |
           if [ "${{ github.event.inputs.tag }}" ]; then
@@ -38,7 +35,11 @@ jobs:
           echo "build_name=${tmp_name}" >> $GITHUB_OUTPUT
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
 
-      # build and push images
+      - name: Clone Repo
+        working-directory: ${{ steps.myval.outputs.build_name }}
+        run: |
+          git clone --depth=1 -b ${{ steps.myval.outputs.build_version }} https://github.com/SagerNet/sing-box.git ${{ steps.myval.outputs.build_name }}
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -48,7 +49,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      - name: Build and push
+      - name: Build and Push
         uses: docker/build-push-action@v6
         with:
           context: ./${{ steps.myval.outputs.build_name }}

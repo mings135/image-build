@@ -6,7 +6,6 @@ on:
   workflow_dispatch:
 
 env:
-  TZ: Asia/Shanghai
   TAG_NAME: sing-box
   REMOTE_TAGS_FILE: sing-box.json
   REMOTE_TAGS_URL: https://api.github.com/repos/SagerNet/sing-box/tags?per_page=60
@@ -18,7 +17,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Get variables
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release Variables
         id: myval
         run: |
           set -e
