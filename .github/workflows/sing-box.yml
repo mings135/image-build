@@ -54,6 +54,7 @@ jobs:
           context: ./${{ steps.myval.outputs.build_name }}
           build-args: |
             VERSION=${{ steps.myval.outputs.build_version }}
+          platforms: linux/amd64,linux/arm64
           push: true
           tags: |
             ${{ steps.myval.outputs.tag_version }}
