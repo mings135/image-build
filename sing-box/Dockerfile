@@ -1,13 +1,15 @@
 FROM --platform=$BUILDPLATFORM golang:1.23.4-alpine AS aaa
-ARG VERSION TARGETOS TARGETARCH
+ARG TARGETOS TARGETARCH VERSION SRC_DIR
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
 ENV CGO_ENABLED=0
+COPY ./$SRC_DIR /go/src/github.com/sagernet/sing-box
+WORKDIR /go/src/github.com/sagernet/sing-box
 RUN echo "${GOOS} ${GOARCH}"
 RUN go build -v -trimpath -tags "with_quic with_acme with_utls" \
     -o /go/bin/sing-box \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
-    ./sing-box/cmd/sing-box
+    ./cmd/sing-box
 
 FROM --platform=$TARGETPLATFORM alpine:3.21.0
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box
