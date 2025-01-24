@@ -712,6 +712,17 @@ check_domain() {
     done
 }
 
+upload_client_config() {
+    for i in $(seq 1 5); do
+        curl -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}
+        if [ $? -eq 0 ]; then
+            break
+        fi
+        echo "Client config upload error!"
+        sleep 10
+    done
+}
+
 main() {
     variable_by_const
     if [ ! -f ${SERVER_FILE} ]; then
@@ -729,6 +740,10 @@ main() {
         echo "Secret password: ${PASSWORD}"
         echo "Secret uuid: ${UUID}"
         echo "Secret vless flow: xtls-rprx-vision"
+    fi
+
+    if [ -e ${CLIENT_FILE} ] && [ "${SUB_API_TOKEN}" ] && [ "${SUB_API_URL}" ]; then
+        upload_client_config
     fi
 }
 
