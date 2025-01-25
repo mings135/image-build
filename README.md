@@ -108,6 +108,8 @@ services:
 | HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100               |
 | HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100               |
 | CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 0(关闭)          |
+| SUB_API_URL         | API URL 用于 upload client.json                      |
+| SUB_API_TOKEN       | API Token 用于 upload client.json                    |
 
 
 
@@ -159,9 +161,9 @@ docker run -d --name sing-box \
 
 **构建 nginx-proxy image**
 
-- 在官方 nginx:*-alpine 版本上修改 entroypoint，用于 sing-box + web 的代理
+- 在官方 nginx:*-alpine 版本上跟换了 entroypoint.sh，用于 sing-box + web 的代理
 
-- 手动更新
+- 手动更新，仅代理 HTTPS/SSL
 
 - docker-compose.yaml
 
@@ -197,7 +199,10 @@ networks:
 | **Parameter** | **Description**                                              |
 | ------------- | ------------------------------------------------------------ |
 | PROXY1        | 代理条目，格式：type,domain:destination（必须）              |
-| PROXY2~9      | 同上（可选）        type: app=4层代理，web=7层代理（需要挂载证书） |
+| PROXY2~9      | 连续、同上            type: app=4层代理，http=7层代理（需要挂载证书） |
 | CERT_SOURCE   | sing-box(default) or certbot，证书来源（可选）               |
 |               | sing-box: /root/.local/share/certmagic 和 /etc/nginx/certs 挂载到同一目录 |
 |               | certbot: /etc/letsencrypt:/etc/nginx/certs                   |
+
+> 后端HTTPS：type=https，但 7 层无法代理 sing-box
+
