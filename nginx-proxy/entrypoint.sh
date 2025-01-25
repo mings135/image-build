@@ -147,7 +147,6 @@ EOF
 }
 
 nginx_default_config() {
-    local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     local tmp_port=$((10000 + $2))
 
