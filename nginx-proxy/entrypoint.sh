@@ -146,73 +146,41 @@ EOF
     sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
 }
 
-nginx_default_config(){
+nginx_default_config() {
     local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
-    if [ "${tmp_protocol}" = "https" ]; then
-        local tmp_port=443
-    else
-        local tmp_port=80
-    fi
+    local tmp_port=$((10000 + $2))
+
+    cat >${HTTP_DIR}/${tmp_domain}.conf <<EOF
+server {
+    listen 127.0.0.1:${tmp_port} ssl proxy_protocol;
+    server_name ${tmp_domain};
+    http2 on;
     
-    cat >${CONFIG_FILE} <<"EOF"
-user  nginx;
-worker_processes  auto;
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
+    ssl_certificate $(eval echo "${CERT_CRT_FILE}");
+    ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
 
-error_log  /var/log/nginx/error.log notice;
-pid        /var/run/nginx.pid;
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
 
-events {
-    worker_connections  1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-EOF
-
-    cat >>${CONFIG_FILE} <<EOF
-
-    server {
-        listen       ${tmp_port};
-        server_name  ${tmp_domain};
-EOF
-
-    if [ "${tmp_protocol}" = "https" ]; then
-        cat >>${CONFIG_FILE} <<EOF
-
-        ssl_session_timeout 5m;
-        ssl_session_cache shared:SSL:50m;
-        ssl_certificate $(eval echo "${CERT_CRT_FILE}");
-        ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
-EOF
-    fi
-
-    cat >>${CONFIG_FILE} <<EOF
-
-        location / {
-            root   /usr/share/nginx/html;
-            index  index.html index.htm;
-        }
-
-        error_page   500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   /usr/share/nginx/html;
-        }
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
     }
 }
 EOF
+
+    cat >${STREAM_DIR}/${tmp_domain}.conf <<EOF
+upstream web-${tmp_port} {
+    server 127.0.0.1:${tmp_port};
+}
+EOF
+
+    sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
 }
 
 nginx_stream_config() {
@@ -245,8 +213,7 @@ nginx_proxy_config() {
         tmp_proxy=$(eval echo '$PROXY'"$i")
         if [ "${tmp_proxy}" ]; then
             if [[ "${tmp_proxy}" =~ ",default$" ]]; then
-                nginx_default_config "${tmp_proxy}"
-                break
+                nginx_default_config "${tmp_proxy}" $i
             elif [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
             else
