@@ -11,6 +11,8 @@ variable_by_const() {
     CONFIG_FILE="${CONFIG_DIR}/nginx.conf"
     HTTP_DIR="${CONFIG_DIR}/conf.d"
     STREAM_DIR="${CONFIG_DIR}/stream-conf.d"
+    CRONTAB_DIR="/etc/periodic/daily"
+    RECORD_DIR="/tmp"
 }
 
 variable_by_env() {
@@ -52,6 +54,39 @@ check_and_init() {
     if [ -e ${HTTP_DIR}/default.conf ]; then
         rm ${HTTP_DIR}/default.conf
     fi
+}
+
+nginx_reload_script() {
+    local tmp_domain=$1
+    local tmp_cert_file=${CONFIG_DIR}/$(eval echo "${CERT_CRT_FILE}")
+    local tmp_record_file=${RECORD_DIR}/${tmp_domain}.md
+
+    cat >${CRONTAB_DIR}/${tmp_domain}.sh <<EOF
+#!/bin/sh
+
+CERT_FILE="${tmp_cert_file}"
+RECORD_FILE="${tmp_record_file}"
+EOF
+
+    cat >>${CRONTAB_DIR}/${tmp_domain}.sh <<"EOF"
+if [ !-e ${CERT_FILE} ]; then
+    echo "$(date +"%Y/%m/%d %H:%M"): Not found ${CERT_FILE}" >> /tmp/script.log
+    exit 1
+fi
+new_md5=$(md5sum ${CERT_FILE} | awk '{print $1}')
+if [ -e ${RECORD_FILE} ]; then
+    old_md5=$(cat ${RECORD_FILE})
+    if [ "${old_md5}" != "${new_md5}" ]; then
+        nginx -s reload
+        echo "$(date +"%Y/%m/%d %H:%M"): reload nginx" >> /tmp/script.log
+    fi
+else
+    echo "${new_md5}" > ${RECORD_FILE}
+    echo "$(date +"%Y/%m/%d %H:%M"): create ${RECORD_FILE}" >> /tmp/script.log
+fi
+EOF
+    chmod 755 ${CRONTAB_DIR}/${tmp_domain}.sh
+    ${CRONTAB_DIR}/${tmp_domain}.sh
 }
 
 nginx_basic_config() {
@@ -144,6 +179,8 @@ upstream web-${tmp_port} {
 EOF
 
     sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
+
+    nginx_reload_script "${tmp_domain}"
 }
 
 nginx_default_config(){
@@ -200,6 +237,8 @@ EOF
     }
 }
 EOF
+
+     nginx_reload_script "${tmp_domain}"
 }
 
 nginx_stream_config() {

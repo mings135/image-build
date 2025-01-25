@@ -713,13 +713,13 @@ check_domain() {
 }
 
 upload_client_config() {
-    for i in $(seq 1 5); do
-        curl -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}
+    for i in $(seq 1 3); do
+        curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}
         if [ $? -eq 0 ]; then
             break
         fi
         echo "Client config upload error!"
-        sleep 10
+        sleep 20
     done
 }
 
