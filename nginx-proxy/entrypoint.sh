@@ -155,7 +155,7 @@ nginx_default_config(){
         local tmp_port=80
     fi
     
-    cat >${CONFIG_FILE} <<EOF
+    cat >${CONFIG_FILE} <<"EOF"
 user  nginx;
 worker_processes  auto;
 
@@ -180,6 +180,9 @@ http {
     #tcp_nopush     on;
 
     keepalive_timeout  65;
+EOF
+
+    cat >>${CONFIG_FILE} <<EOF
 
     server {
         listen       ${tmp_port};
