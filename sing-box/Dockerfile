@@ -10,7 +10,7 @@ RUN go build -v -trimpath -tags "with_quic with_acme with_utls" \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
     ./cmd/sing-box
 
-FROM --platform=$TARGETPLATFORM alpine:3.21.0
+FROM alpine:3.21.0
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box
 RUN apk upgrade --no-cache \
     && apk add --no-cache pwgen tzdata ca-certificates yq curl bind-tools

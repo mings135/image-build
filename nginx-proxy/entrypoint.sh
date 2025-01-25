@@ -146,6 +146,47 @@ EOF
     sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
 }
 
+nginx_default_config(){
+    local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
+    local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
+    if [ "${tmp_protocol}" = "https" ]; then
+        local tmp_port=443
+    else
+        local tmp_port=80
+    fi
+    
+
+    cat >${HTTP_DIR}/${tmp_domain}.conf <<EOF
+server {
+    listen       ${tmp_port};
+    server_name  ${tmp_domain};
+EOF
+
+    if [ "${tmp_protocol}" = "https" ]; then
+        cat >>${HTTP_DIR}/${tmp_domain}.conf <<EOF
+
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
+    ssl_certificate $(eval echo "${CERT_CRT_FILE}");
+    ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
+EOF
+    fi
+
+    cat >>${HTTP_DIR}/${tmp_domain}.conf <<EOF
+
+    location / {
+        root   /usr/share/nginx/html;
+        index  index.html index.htm;
+    }
+
+    error_page   500 502 503 504  /50x.html;
+    location = /50x.html {
+        root   /usr/share/nginx/html;
+    }
+}
+EOF
+}
+
 nginx_stream_config() {
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
@@ -175,7 +216,9 @@ nginx_proxy_config() {
     for i in $(seq 1 9); do
         tmp_proxy=$(eval echo '$PROXY'"$i")
         if [ "${tmp_proxy}" ]; then
-            if [[ "${tmp_proxy}" =~ "^https?," ]]; then
+            if [[ "${tmp_proxy}" =~ ",default$" ]]; then
+                nginx_default_config "${tmp_proxy}"
+            elif [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
             else
                 nginx_stream_config "${tmp_proxy}" $i
