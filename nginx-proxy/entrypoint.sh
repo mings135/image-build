@@ -86,7 +86,7 @@ http {
     #gzip  on;
 
     client_max_body_size 10m;
-    proxy_set_header Host $http_host;
+    proxy_set_header Host $host;
     proxy_set_header X-Real-IP $proxy_protocol_addr;
     proxy_set_header X-Forwarded-For $proxy_protocol_addr,$proxy_add_x_forwarded_for;
 
