@@ -69,7 +69,7 @@ RECORD_FILE="${tmp_record_file}"
 EOF
 
     cat >>${CRONTAB_DIR}/${tmp_domain}.sh <<"EOF"
-if [ !-e ${CERT_FILE} ]; then
+if [ ! -e ${CERT_FILE} ]; then
     echo "$(date +"%Y/%m/%d %H:%M"): Not found ${CERT_FILE}" >> /tmp/script.log
     exit 1
 fi
@@ -299,4 +299,5 @@ main() {
 }
 
 main
+crond # alpine 启动 crontab 功能
 exec "$@"
