@@ -155,33 +155,58 @@ nginx_default_config(){
         local tmp_port=80
     fi
     
+    cat >${CONFIG_FILE} <<EOF
+user  nginx;
+worker_processes  auto;
 
-    cat >${HTTP_DIR}/${tmp_domain}.conf <<EOF
-server {
-    listen       ${tmp_port};
-    server_name  ${tmp_domain};
+error_log  /var/log/nginx/error.log notice;
+pid        /var/run/nginx.pid;
+
+events {
+    worker_connections  1024;
+}
+
+http {
+    include       /etc/nginx/mime.types;
+    default_type  application/octet-stream;
+
+    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                      '$status $body_bytes_sent "$http_referer" '
+                      '"$http_user_agent" "$http_x_forwarded_for"';
+
+    access_log  /var/log/nginx/access.log  main;
+
+    sendfile        on;
+    #tcp_nopush     on;
+
+    keepalive_timeout  65;
+
+    server {
+        listen       ${tmp_port};
+        server_name  ${tmp_domain};
 EOF
 
     if [ "${tmp_protocol}" = "https" ]; then
-        cat >>${HTTP_DIR}/${tmp_domain}.conf <<EOF
+        cat >>${CONFIG_FILE} <<EOF
 
-    ssl_session_timeout 5m;
-    ssl_session_cache shared:SSL:50m;
-    ssl_certificate $(eval echo "${CERT_CRT_FILE}");
-    ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
+        ssl_session_timeout 5m;
+        ssl_session_cache shared:SSL:50m;
+        ssl_certificate $(eval echo "${CERT_CRT_FILE}");
+        ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
 EOF
     fi
 
-    cat >>${HTTP_DIR}/${tmp_domain}.conf <<EOF
+    cat >>${CONFIG_FILE} <<EOF
 
-    location / {
-        root   /usr/share/nginx/html;
-        index  index.html index.htm;
-    }
+        location / {
+            root   /usr/share/nginx/html;
+            index  index.html index.htm;
+        }
 
-    error_page   500 502 503 504  /50x.html;
-    location = /50x.html {
-        root   /usr/share/nginx/html;
+        error_page   500 502 503 504  /50x.html;
+        location = /50x.html {
+            root   /usr/share/nginx/html;
+        }
     }
 }
 EOF
@@ -218,6 +243,7 @@ nginx_proxy_config() {
         if [ "${tmp_proxy}" ]; then
             if [[ "${tmp_proxy}" =~ ",default$" ]]; then
                 nginx_default_config "${tmp_proxy}"
+                break
             elif [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
             else
