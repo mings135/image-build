@@ -713,12 +713,15 @@ check_domain() {
 }
 
 upload_client_config() {
+    local tmp_count=3
     for i in $(seq 1 3); do
         if curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}; then
             break
         fi
         echo "Client config upload error!"
-        sleep 20
+        if [ $i -ne ${tmp_count} ]; then
+            sleep 20
+        fi
     done
 }
 
