@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# PROXY1=web,web.mqgo.top,1.1.1.1:80
+# PROXY1=http,web.mqgo.top,1.1.1.1:80
 # PROXY2=app,app.mqgo.top,2.2.2.2:443
 # CERT_SOURCE=certbot
 # volume /etc/nginx/certs --> sing-box /root/.local/share/certmagic(default) or certbot /etc/letsencrypt
@@ -111,6 +111,7 @@ EOF
 }
 
 nginx_http_config() {
+    local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
     local tmp_port=$((10000 + $2))
@@ -131,7 +132,7 @@ server {
     ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
 
     location / {
-        proxy_pass http://${tmp_domain};
+        proxy_pass ${tmp_protocol}://${tmp_domain};
     }
 }
 EOF
@@ -174,8 +175,7 @@ nginx_proxy_config() {
     for i in $(seq 1 9); do
         tmp_proxy=$(eval echo '$PROXY'"$i")
         if [ "${tmp_proxy}" ]; then
-            tmp_type="$(echo "${tmp_proxy}" | awk -F ',' '{print $1}')"
-            if [ "${tmp_type}" = "web" ]; then
+            if [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
             else
                 nginx_stream_config "${tmp_proxy}" $i
