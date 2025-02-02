@@ -19,6 +19,8 @@ variable_by_const() {
     CLIENT_ROUTE=${CONFIG_DIR}/client-route.json
     # auto
     VERSION=$(sing-box version | grep 'version' | grep -oE '[0-9]+\.[0-9]+')
+    # cron
+    CRONTAB_DIR="/etc/periodic/daily"
 }
 
 variable_by_env() {
@@ -35,15 +37,15 @@ variable_by_env() {
     TUIC_PORT=${TUIC_PORT:-"0"}
     HYSTERIA2_PORT=${HYSTERIA2_PORT:-"0"}
     # 额外配置
-    TROJAN_FALLBACK_SERVER=${TROJAN_FALLBACK_SERVER:-"127.0.0.1"}
-    TROJAN_FALLBACK_PORT=${TROJAN_FALLBACK_PORT:-"0"}
     HYSTERIA_UP_SPEED=${HYSTERIA_UP_SPEED:-"100"}
     HYSTERIA_DOWN_SPEED=${HYSTERIA_DOWN_SPEED:-"100"}
     # 客户端配置
-    CLIENT_CLASH_PORT=${CLIENT_CLASH_PORT:-"0"}
+    CLIENT_CLASH_PORT=${CLIENT_CLASH_PORT:-"9090"}
     CLIENT_CLASH_UI=${CLIENT_CLASH_UI:-"ui"}
     # 检查
     CHECK_DNS=${CHECK_DNS:-"1"}
+    # Upload client.json
+    SUB_UPLOAD_LEVEL=${SUB_UPLOAD_LEVEL:-"1"}
 }
 
 varialbe_by_auto() {
@@ -79,7 +81,7 @@ server_create_trojan() {
     "listen_port": 443,
     "users": [
         {
-            "password": "123"
+            "password": ""
         }
     ],
     "tls": {
@@ -90,7 +92,7 @@ server_create_trojan() {
         ],
         "acme": {
             "domain": [],
-            "email": "123",
+            "email": "",
             "provider": "letsencrypt"
         }
     }
@@ -107,15 +109,15 @@ server_create_naive() {
     "listen_port": 443,
     "users": [
         {
-            "username": "123",
-            "password": "123"
+            "username": "",
+            "password": ""
         }
     ],
     "tls": {
         "enabled": true,
         "acme": {
             "domain": [],
-            "email": "123",
+            "email": "",
             "provider": "letsencrypt"
         }
     }
@@ -132,7 +134,7 @@ server_create_vless() {
     "listen_port": 443,
     "users": [
         {
-            "uuid": "123",
+            "uuid": "",
             "flow": "xtls-rprx-vision"
         }
     ],
@@ -144,7 +146,7 @@ server_create_vless() {
         ],
         "acme": {
             "domain": [],
-            "email": "123",
+            "email": "",
             "provider": "letsencrypt"
         }
     }
@@ -161,8 +163,8 @@ server_create_tuic() {
     "listen_port": 443,
     "users": [
         {
-            "uuid": "123",
-            "password": "123"
+            "uuid": "",
+            "password": ""
         }
     ],
     "congestion_control": "bbr",
@@ -173,7 +175,7 @@ server_create_tuic() {
         ],
         "acme": {
             "domain": [],
-            "email": "123",
+            "email": "",
             "provider": "letsencrypt"
         }
     }
@@ -192,7 +194,7 @@ server_create_hysteria2() {
     "down_mbps": 100,
     "users": [
         {
-            "password": "123"
+            "password": ""
         }
     ],
     "tls": {
@@ -202,7 +204,7 @@ server_create_hysteria2() {
         ],
         "acme": {
             "domain": [],
-            "email": "123",
+            "email": "",
             "provider": "letsencrypt"
         }
     }
@@ -237,11 +239,6 @@ server_generate_config() {
         server_create_trojan
         tmp_var=${TROJAN_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TROJAN}
         tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TROJAN}
-        if [ ${TROJAN_FALLBACK_PORT} -ne 0 ]; then
-            tmp_var=${TROJAN_FALLBACK_SERVER} yq -ioj '.fallback.server = strenv(tmp_var)' ${SERVER_TROJAN}
-            tmp_var=${TROJAN_FALLBACK_PORT} yq -ioj '.fallback.server_port = env(tmp_var)' ${SERVER_TROJAN}
-            yq -ioj 'del(.tls.alpn[] | select(. == "h2"))' ${SERVER_TROJAN}
-        fi
         # server config change
         tmp_var=${SERVER_TROJAN} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
         rm ${SERVER_TROJAN}
@@ -307,7 +304,7 @@ client_create_trojan() {
     "tag": "trojan-out",
     "server": "",
     "server_port": 443,
-    "password": "123",
+    "password": "",
     "tls": {
         "enabled": true,
         "utls": {
@@ -326,7 +323,7 @@ client_create_vless() {
     "tag": "vless-out",
     "server": "",
     "server_port": 443,
-    "uuid": "123",
+    "uuid": "",
     "flow": "xtls-rprx-vision",
     "tls": {
         "enabled": true,
@@ -346,8 +343,8 @@ client_create_tuic() {
     "tag": "tuic-out",
     "server": "",
     "server_port": 443,
-    "uuid": "123",
-    "password": "123",
+    "uuid": "",
+    "password": "",
     "congestion_control": "bbr",
     "tls": {
         "enabled": true,
@@ -368,7 +365,7 @@ client_create_hysteria2() {
     "server_port": 443,
     "up_mbps": 100,
     "down_mbps": 100,
-    "password": "123",
+    "password": "",
     "tls": {
         "enabled": true,
         "alpn": [
@@ -650,7 +647,21 @@ client_generate_config() {
         yq -ioj 'del(.inbounds[0].inet6_address)' ${CLIENT_FILE}
         yq -ioj '.inbounds[0].address[0] = "172.19.0.1/30"' ${CLIENT_FILE}
         yq -ioj '.inbounds[0].address[1] = "fdfe::1/126"' ${CLIENT_FILE}
-    fi 
+    fi
+
+    # Deprecated changes about sing-box v1.11
+    if compare_version_ge "${VERSION}" "1.11"; then
+        # add action to dns and block, and delete dns and block in outbounds and rules
+        yq -ioj 'with(.route.rules; .[] | select(.outbound == "dns").action = "hijack-dns")' ${CLIENT_FILE}
+        yq -ioj 'with(.route.rules; .[] | select(.outbound == "block").action = "reject")' ${CLIENT_FILE}
+        yq -ioj 'del(.route.rules[] | select(.outbound == "dns").outbound)' ${CLIENT_FILE}
+        yq -ioj 'del(.route.rules[] | select(.outbound == "block").outbound)' ${CLIENT_FILE}
+        yq -ioj 'del(.outbounds[] | select(.type == "dns"))' ${CLIENT_FILE}
+        yq -ioj 'del(.outbounds[] | select(.type == "block"))' ${CLIENT_FILE}
+        # add action to sniff, and delete sniff in inbounds
+        yq -ioj '.route.rules = [{"action": "sniff"}] + .route.rules' ${CLIENT_FILE}
+        yq -ioj 'del(.inbounds[0].sniff)' ${CLIENT_FILE}
+    fi
 }
 
 check_variable() {
@@ -713,16 +724,36 @@ check_domain() {
 }
 
 upload_client_config() {
-    local tmp_count=3
-    for i in $(seq 1 3); do
-        if curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}; then
-            break
-        fi
-        echo "Client config upload error!"
-        if [ $i -ne ${tmp_count} ]; then
-            sleep 20
-        fi
-    done
+    cat >${CRONTAB_DIR}/subscribe.sh <<EOF
+#!/bin/sh
+SUB_API_TOKEN="${SUB_API_TOKEN}"
+SUB_API_URL="${SUB_API_URL}"
+CLIENT_FILE="${CLIENT_FILE}"
+ATTEMPT_COUNT=3
+EOF
+
+    cat >>${CRONTAB_DIR}/subscribe.sh <<'EOF'
+for i in $(seq 1 ${ATTEMPT_COUNT}); do
+    if curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' \
+        -X POST ${SUB_API_URL} -d @${CLIENT_FILE}; then
+        echo "$(date +"%Y/%m/%d %H:%M"): Upload success" >> /tmp/script.log
+        break
+    fi
+    echo "$(date +"%Y/%m/%d %H:%M"): Upload failed" >> /tmp/script.log
+    if [ $i -ne ${ATTEMPT_COUNT} ]; then
+        sleep 20
+    fi
+done
+EOF
+
+    chmod +x ${CRONTAB_DIR}/subscribe.sh
+    if [ ${SUB_UPLOAD_LEVEL} -eq 1 ]; then
+        ${CRONTAB_DIR}/subscribe.sh
+    fi
+    if [ ${SUB_UPLOAD_LEVEL} -eq 2 ]; then
+        ${CRONTAB_DIR}/subscribe.sh
+        crond
+    fi
 }
 
 main() {

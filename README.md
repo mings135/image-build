@@ -107,9 +107,11 @@ services:
 | HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                         |
 | HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100               |
 | HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100               |
-| CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 0(关闭)          |
+| CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 9090             |
+| CLIENT_CLASH_UI     | clash api URI，默认 ui                               |
 | SUB_API_URL         | API URL 用于 upload client.json                      |
 | SUB_API_TOKEN       | API Token 用于 upload client.json                    |
+| SUB_UPLOAD_LEVEL    | 默认 1=仅上传 1 次，0=不上传，2=每日上传 1 次        |
 
 
 
