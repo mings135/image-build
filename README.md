@@ -66,7 +66,7 @@ bash almalinux9-docker.sh && rm almalinux9-docker.sh
 **构建 sing-box image**
 
 - 源码来源：https://github.com/SagerNet/sing-box
-- 每日检查正式版本，隔日自动更新
+- 正式版本，自动更新
 
 - docker-compose.yaml
 
@@ -77,7 +77,6 @@ services:
     image: mings135/sing-box:latest
     restart: always
     environment:
-      - TZ=Asia/Shanghai
       - DOMAIN=example.com
       - EMAIL=user@gmail.com
       - PASSWORD=pwd
@@ -111,7 +110,7 @@ services:
 | CLIENT_CLASH_UI     | clash api URI，默认 ui                               |
 | SUB_API_URL         | API URL 用于 upload client.json                      |
 | SUB_API_TOKEN       | API Token 用于 upload client.json                    |
-| SUB_UPLOAD_LEVEL    | 默认 1=仅上传 1 次，0=不上传，2=每日上传 1 次        |
+| SUB_UPLOAD_LEVEL    | 默认 1=仅 1 次，0=不上传，2=每日 1 次，3=每小时 1 次 |
 
 
 
@@ -136,7 +135,6 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 
 # docker 运行 sing-box
 docker run -d --name sing-box \
-  -e TZ=Asia/Shanghai \
   -e DOMAIN=example.com \
   -e EMAIL=user@gmail.com \
   -e PASSWORD=pwd \
@@ -151,6 +149,7 @@ docker run -d --name sing-box \
 **Windows bat  启动脚本 sing-box.bat**
 
 - 创建 bat 后再创建一个快捷方式，修改快捷方式高级属性，用管理员方式运行
+- sing-box.exe 官方获取，client.json 使用上面命令获取
 
  ```bat
  cd /d %~dp0
@@ -163,7 +162,7 @@ docker run -d --name sing-box \
 
 **构建 nginx-proxy image**
 
-- 在官方 nginx:*-alpine 版本上跟换了 entroypoint.sh，用于 sing-box + web 的代理
+- 在官方 nginx:*-alpine 修改版，用于 sing-box + web 的代理
 
 - 手动更新，仅代理 HTTPS/SSL
 
@@ -178,7 +177,6 @@ services:
     ports:
       - 443:443
     environment:
-      - TZ=Asia/Shanghai
       - PROXY1=app,aa.example.com,10.1.1.10:80
       - PROXY2=web,bb.example.com,10.1.1.20:443
     networks:
@@ -191,7 +189,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: "10.1.1.0/24"
+        - subnet: "10.6.6.0/24"
 ```
 
 
@@ -205,6 +203,4 @@ networks:
 | CERT_SOURCE   | sing-box(default) or certbot，证书来源（可选）               |
 |               | sing-box: /root/.local/share/certmagic 和 /etc/nginx/certs 挂载到同一目录 |
 |               | certbot: /etc/letsencrypt:/etc/nginx/certs                   |
-
-> 后端HTTPS：type=https，但 7 层无法代理 sing-box
 

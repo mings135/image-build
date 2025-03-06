@@ -19,8 +19,6 @@ variable_by_const() {
     CLIENT_ROUTE=${CONFIG_DIR}/client-route.json
     # auto
     VERSION=$(sing-box version | grep 'version' | grep -oE '[0-9]+\.[0-9]+')
-    # cron
-    CRONTAB_DIR="/etc/periodic/daily"
 }
 
 variable_by_env() {
@@ -724,7 +722,16 @@ check_domain() {
 }
 
 upload_client_config() {
-    cat >${CRONTAB_DIR}/subscribe.sh <<EOF
+    local cron_dir
+    if [ ${SUB_UPLOAD_LEVEL} -eq 3 ]; then
+        cron_dir="/etc/periodic/hourly"
+    elif [ ${SUB_UPLOAD_LEVEL} -eq 2 ]; then
+        cron_dir="/etc/periodic/daily"
+    else
+        cron_dir="/tmp"
+    fi
+
+    cat >${cron_dir}/subscribe.sh <<EOF
 #!/bin/sh
 SUB_API_TOKEN="${SUB_API_TOKEN}"
 SUB_API_URL="${SUB_API_URL}"
@@ -732,10 +739,10 @@ CLIENT_FILE="${CLIENT_FILE}"
 ATTEMPT_COUNT=3
 EOF
 
-    cat >>${CRONTAB_DIR}/subscribe.sh <<'EOF'
+    cat >>${cron_dir}/subscribe.sh <<'EOF'
 for i in $(seq 1 ${ATTEMPT_COUNT}); do
-    if curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' \
-        -X POST ${SUB_API_URL} -d @${CLIENT_FILE}; then
+    curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}
+    if [ $? -eq 0 ]; then
         echo "$(date +"%Y/%m/%d %H:%M"): Upload success" >> /tmp/script.log
         break
     fi
@@ -746,12 +753,11 @@ for i in $(seq 1 ${ATTEMPT_COUNT}); do
 done
 EOF
 
-    chmod +x ${CRONTAB_DIR}/subscribe.sh
-    if [ ${SUB_UPLOAD_LEVEL} -eq 1 ]; then
-        ${CRONTAB_DIR}/subscribe.sh
+    chmod +x ${cron_dir}/subscribe.sh
+    if [ ${SUB_UPLOAD_LEVEL} -ge 1 ]; then
+        ${cron_dir}/subscribe.sh
     fi
-    if [ ${SUB_UPLOAD_LEVEL} -eq 2 ]; then
-        ${CRONTAB_DIR}/subscribe.sh
+    if [ ${SUB_UPLOAD_LEVEL} -ge 2 ]; then
         crond
     fi
 }
