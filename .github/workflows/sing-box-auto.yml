@@ -5,13 +5,6 @@ on:
     - cron: "20 20 * * *"
   workflow_dispatch:
 
-env:
-  TAG_NAME: sing-box
-  REMOTE_TAGS_FILE: sing-box.json
-  REMOTE_TAGS_URL: https://api.github.com/repos/SagerNet/sing-box/tags?per_page=60
-  LOCAL_TAGS_FILE: image-build.json
-  LOCAL_TAGS_URL: https://api.github.com/repos/mings135/image-build/tags
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,28 +16,8 @@ jobs:
       - name: Release Variables
         id: myval
         run: |
-          set -e
           sudo -E curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo -E chmod +x /usr/local/bin/yq
-          curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
-          curl -fsSL ${REMOTE_TAGS_URL} > ${REMOTE_TAGS_FILE}
-          yq -rioj '.[].name' ${LOCAL_TAGS_FILE}
-          for i in $(seq 0 50)
-          do
-            tmp_latest_name=$(tmp_key=$i yq -roj '.[env(tmp_key)].name' ${REMOTE_TAGS_FILE})
-            if [ "${tmp_latest_name}" = 'null' ]; then
-              break
-            fi
-            tag_all="${TAG_NAME}/${tmp_latest_name}"
-            if echo "${tag_all}" | grep -Eqi 'v([[:digit:]]*\.){2}[[:digit:]]*$'; then
-              break
-            fi
-          done
-          if echo "${tag_all}" | grep -Eqi 'v([[:digit:]]*\.){2}[[:digit:]]*$' && ! grep -Eqi "^${tag_all}$" ${LOCAL_TAGS_FILE}; then
-            echo "release_status=yes" >> $GITHUB_OUTPUT
-          else
-            echo "release_status=no" >> $GITHUB_OUTPUT
-          fi
-          echo "release_tag=${tag_all}" >> $GITHUB_OUTPUT
+          bash sing-box/auto.sh
 
       - name: Create Release
         uses: softprops/action-gh-release@v2

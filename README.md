@@ -27,36 +27,21 @@ bash debian12-docker.sh && rm debian12-docker.sh
 ```shell
 cat > debian12-opt.sh <<"EOF"
 set -e
+apt-get update && apt-get install -y vim fail2ban rsyslog iptables
 sed -i 's/mouse=a/mouse-=a/' /usr/share/vim/vim90/defaults.vim
 { \
 echo "net.ipv6.conf.all.disable_ipv6 = 1"; \
 echo "net.ipv6.conf.default.disable_ipv6 = 1"; \
 } > /etc/sysctl.d/90-disable-ipv6.conf
 sysctl --system
-apt-get update && apt-get install -y fail2ban rsyslog iptables
 sed -e 's/maxretry = 5/maxretry = 3/' \
     -e 's/findtime  = 10m/findtime  = 90d/' \
     -e 's/bantime  = 10m/bantime  = 90d/' \
     -i /etc/fail2ban/jail.conf
 grep -E 'maxretry = 3|findtime  = 90d|bantime  = 90d' /etc/fail2ban/jail.conf
+echo "请手动执行 reboot"
 EOF
 bash debian12-opt.sh && rm debian12-opt.sh
-```
-
-
-
-**Almalinux9**
-
-- docker
-
-```shell
-cat > almalinux9-docker.sh <<"EOF"
-set -e
-yum install -y yum-utils
-yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-yum install -y docker-ce docker-compose-plugin
-EOF
-bash almalinux9-docker.sh && rm almalinux9-docker.sh
 ```
 
 
@@ -97,7 +82,7 @@ services:
 | PASSWORD            | 密码，默认随机（重启重置）                           |
 | UUID                | uuid，默认随机（重启重置）                           |
 | LEVEL               | 日志级别，默认 warn                                  |
-| LABEL               | 节点标签（client.json），默认随机                    |
+| LABEL               | 节点标签，用于区分不同节点的配置，默认随机           |
 | CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)           |
 | TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(无任何其他服务开启) |
 | NAIVE_PORT          | Naive 端口，默认 0(关闭)                             |
@@ -108,8 +93,8 @@ services:
 | HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100               |
 | CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 9090             |
 | CLIENT_CLASH_UI     | clash api URI，默认 ui                               |
-| SUB_API_URL         | API URL 用于 upload client.json                      |
-| SUB_API_TOKEN       | API Token 用于 upload client.json                    |
+| SUB_API_URL         | Subscribe 服务的 URL，用于上传 client.json，整合配置 |
+| SUB_API_TOKEN       | Subscribe 服务的 Token，用于上传 client.json         |
 | SUB_UPLOAD_LEVEL    | 默认 1=仅 1 次，0=不上传，2=每日 1 次，3=每小时 1 次 |
 
 
@@ -132,24 +117,16 @@ docker compose exec sing-box yq -oj /etc/sing-box/client.json
 
 # 查看 sing-box client.json config about outbounds
 docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client.json
-
-# docker 运行 sing-box
-docker run -d --name sing-box \
-  -e DOMAIN=example.com \
-  -e EMAIL=user@gmail.com \
-  -e PASSWORD=pwd \
-  -v sing-box-certs:/root/.local/share/certmagic \
-  --network host \
-  --restart always \
-  mings135/sing-box:latest
 ```
 
 
 
 **Windows bat  启动脚本 sing-box.bat**
 
-- 创建 bat 后再创建一个快捷方式，修改快捷方式高级属性，用管理员方式运行
-- sing-box.exe 官方获取，client.json 使用上面命令获取
+- 同一目录下包含：sing-box.exe、client.json、sing-box.bat
+- sing-box.exe 官方获取，client.json 使用上面命令获取，也可以通过 Subscribe 服务获取
+
+- sing-box.bat 自行创建，内容如下，同时创建 sing-box.bat 的桌面快捷方式，修改快捷方式高级属性，用管理员方式运行，启动直接运行快捷方式即可
 
  ```bat
  cd /d %~dp0
@@ -178,7 +155,7 @@ services:
       - 443:443
     environment:
       - PROXY1=app,aa.example.com,10.1.1.10:80
-      - PROXY2=web,bb.example.com,10.1.1.20:443
+      - PROXY2=http,bb.example.com,10.1.1.20:443
     networks:
       - net
     volumes:
