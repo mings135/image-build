@@ -11,9 +11,6 @@ LOCAL_TAGS_URL=https://api.github.com/repos/mings135/image-build/tags
 # 新 tag 默认 none
 new_release_tag="none"
 
-# 安装 yq
-sudo -E curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo -E chmod +x /usr/local/bin/yq
-
 # 获取本地 tags
 curl -fsSL ${LOCAL_TAGS_URL} > ${LOCAL_TAGS_FILE}
 yq -rioj '.[].name' ${LOCAL_TAGS_FILE}

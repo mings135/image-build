@@ -22,7 +22,8 @@ jobs:
 
       - name: Build Variables
         id: myval
-        run: ./build.sh
+        run: |
+          bash build.sh
 
       - name: Change Dockerfile
         run: |

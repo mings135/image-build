@@ -15,7 +15,9 @@ jobs:
 
       - name: Release Variables
         id: myval
-        run: ./sing-box/auto.sh
+        run: |
+          sudo -E curl -fsSL -o /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 && sudo -E chmod +x /usr/local/bin/yq
+          bash sing-box/auto.sh
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
