@@ -17,6 +17,9 @@ variable_by_const() {
     CLIENT_TUIC=${CONFIG_DIR}/client-tuic.json
     CLIENT_HYSTERIA2=${CONFIG_DIR}/client-hysteria2.json
     CLIENT_ROUTE=${CONFIG_DIR}/client-route.json
+    # client deprecated about version
+    CLIENT_TMP1=${CONFIG_DIR}/client-tmp1.json
+    CLIENT_TMP2=${CONFIG_DIR}/client-tmp2.json
     # auto
     VERSION=$(sing-box version | grep 'version' | grep -oE '[0-9]+\.[0-9]+')
 }
@@ -637,8 +640,46 @@ client_generate_config() {
     if [ ${CLIENT_CLASH_PORT} -ne 0 ]; then
         tmp_var="127.0.0.1:${CLIENT_CLASH_PORT}" yq -ioj '.experimental.clash_api.external_controller = strenv(tmp_var)' ${CLIENT_FILE}
         tmp_var="${CLIENT_CLASH_UI}" yq -ioj '.experimental.clash_api.external_ui = strenv(tmp_var)' ${CLIENT_FILE}
-    fi
-    
+    fi   
+}
+
+# Deprecated changes about version
+client_deprecated_ver1_12() {
+    # 重写 .dns and .inbounds
+    cat >${CLIENT_TMP1} <<"EOF"
+{
+  "servers":
+    [
+      { "tag": "google", "type": "tls", "server": "8.8.4.4" },
+      { "tag": "local", "type": "udp", "server": "223.5.5.5" },
+      {
+        "tag": "remote",
+        "type": "fakeip",
+        "inet4_range": "198.18.0.0/15",
+        "inet6_range": "fc00::/18",
+      },
+    ],
+  "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }],
+  "independent_cache": true,
+}
+EOF
+
+    cat >${CLIENT_TMP2} <<"EOF"
+[
+  {
+    "type": "tun",
+    "interface_name": "tun0",
+    "mtu": 1492,
+    "auto_route": true,
+    "strict_route": true,
+    "stack": "system",
+    "address": ["172.19.0.1/30", "fdfe::1/126"],
+  },
+]
+EOF
+}
+
+client_deprecated_changes() {
     # Deprecated changes about sing-box v1.10
     if compare_version_ge "${VERSION}" "1.10"; then
         yq -ioj 'del(.inbounds[0].inet4_address)' ${CLIENT_FILE}
@@ -660,7 +701,18 @@ client_generate_config() {
         yq -ioj '.route.rules = [{"action": "sniff"}] + .route.rules' ${CLIENT_FILE}
         yq -ioj 'del(.inbounds[0].sniff)' ${CLIENT_FILE}
     fi
+
+    # Deprecated changes about sing-box v1.12
+    if compare_version_ge "${VERSION}" "1.12"; then
+        client_deprecated_ver1_12
+        tmp_var=${CLIENT_TMP1} yq -ioj '.dns = load(strenv(tmp_var))' ${CLIENT_FILE}
+        rm ${CLIENT_TMP1}
+        tmp_var=${CLIENT_TMP2} yq -ioj '.inbounds = load(strenv(tmp_var))' ${CLIENT_FILE}
+        rm ${CLIENT_TMP2}
+        yq -ioj '.route.default_domain_resolver = "local"' ${CLIENT_FILE}
+    fi
 }
+
 
 check_variable() {
     # 检查 version
@@ -773,6 +825,7 @@ main() {
         fi
         server_generate_config
         client_generate_config
+        client_deprecated_changes
         echo "Network ipv4 address: ${ADDRESS_IPV4}"
         echo "Network ipv6 address: ${ADDRESS_IPV6}"
         echo "Secret username: ${USERNAME}"
