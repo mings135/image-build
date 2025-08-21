@@ -661,6 +661,7 @@ client_deprecated_ver1_12() {
     ],
   "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }],
   "independent_cache": true,
+  "strategy": "ipv4_only",
 }
 EOF
 
