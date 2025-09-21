@@ -4,7 +4,49 @@
 
 
 
-**Debian 12**
+**Debian 12、13**
+
+- fail2ban 安装，关闭 IPV6，优化 vi 命令，开启 BBR
+
+```shell
+cat > debian12-opt.sh <<"EOF"
+set -e
+apt-get update && apt-get install -y vim fail2ban rsyslog iptables
+
+if cat /etc/issue | grep -q "Linux 12"; then
+	sed -i 's/mouse=a/mouse-=a/' /usr/share/vim/vim90/defaults.vim
+elif cat /etc/issue | grep -q "Linux 13"; then
+	sed -i 's/mouse=a/mouse-=a/' /usr/share/vim/vim91/defaults.vim
+fi
+
+{ \
+    echo "net.ipv6.conf.all.disable_ipv6 = 1"; \
+    echo "net.ipv6.conf.default.disable_ipv6 = 1"; \
+} > /etc/sysctl.d/90-disable-ipv6.conf
+if ! sysctl -a | grep -q "net.ipv4.tcp_congestion_control = bbr"; then
+	{ \
+        echo "net.core.default_qdisc = fq"; \
+        echo "net.ipv4.tcp_congestion_control = bbr"; \
+    }  > /etc/sysctl.d/90-bbr.conf
+fi
+sysctl --system
+
+sed -e 's/maxretry = 5/maxretry = 3/' \
+    -e 's/findtime  = 10m/findtime  = 90d/' \
+    -e 's/bantime  = 10m/bantime  = 90d/' \
+    -i /etc/fail2ban/jail.conf
+
+echo "当前 faile2ban 部分配置："
+grep -E 'maxretry = 3|findtime  = 90d|bantime  = 90d' /etc/fail2ban/jail.conf
+echo "当前 bbr 设置："
+sysctl -a | grep default_qdisc
+sysctl -a | grep tcp_congestion_control
+echo "手动 reboot 重启系统"
+EOF
+bash debian12-opt.sh && rm debian12-opt.sh
+```
+
+
 
 - docker 安装
 
@@ -18,30 +60,6 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker-
 apt-get update && apt-get install -y docker-ce docker-compose-plugin
 EOF
 bash debian12-docker.sh && rm debian12-docker.sh
-```
-
-
-
-- fail2ban 安装，关闭 IPV6，优化 vi 命令（运行后需要重启）
-
-```shell
-cat > debian12-opt.sh <<"EOF"
-set -e
-apt-get update && apt-get install -y vim fail2ban rsyslog iptables
-sed -i 's/mouse=a/mouse-=a/' /usr/share/vim/vim90/defaults.vim
-{ \
-echo "net.ipv6.conf.all.disable_ipv6 = 1"; \
-echo "net.ipv6.conf.default.disable_ipv6 = 1"; \
-} > /etc/sysctl.d/90-disable-ipv6.conf
-sysctl --system
-sed -e 's/maxretry = 5/maxretry = 3/' \
-    -e 's/findtime  = 10m/findtime  = 90d/' \
-    -e 's/bantime  = 10m/bantime  = 90d/' \
-    -i /etc/fail2ban/jail.conf
-grep -E 'maxretry = 3|findtime  = 90d|bantime  = 90d' /etc/fail2ban/jail.conf
-echo "请手动执行 reboot"
-EOF
-bash debian12-opt.sh && rm debian12-opt.sh
 ```
 
 
@@ -74,41 +92,34 @@ services:
 
 - Configuration
 
-| **Parameter**       | **Description**                                      |
-| ------------------- | ---------------------------------------------------- |
-| DOMAIN              | 域名（必须）                                         |
-| EMAIL               | 用于申请证书（必须）                                 |
-| USERNAME            | 用户名，默认随机（重启重置）                         |
-| PASSWORD            | 密码，默认随机（重启重置）                           |
-| UUID                | uuid，默认随机（重启重置）                           |
-| LEVEL               | 日志级别，默认 warn                                  |
-| LABEL               | 节点标签，用于区分不同节点的配置，默认随机           |
-| CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)           |
-| TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(无任何其他服务开启) |
-| NAIVE_PORT          | Naive 端口，默认 0(关闭)                             |
-| VLESS_PORT          | Vless 端口，默认 0(关闭)                             |
-| TUIC_PORT           | Tuic 端口，默认 0(关闭)                              |
-| HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                         |
-| HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100               |
-| HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100               |
-| CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 9090             |
-| CLIENT_CLASH_UI     | clash api URI，默认 ui                               |
-| SUB_API_URL         | Subscribe 服务的 URL，用于上传 client.json，整合配置 |
-| SUB_API_TOKEN       | Subscribe 服务的 Token，用于上传 client.json         |
-| SUB_UPLOAD_LEVEL    | 默认 1=仅 1 次，0=不上传，2=每日 1 次，3=每小时 1 次 |
+| **Parameter**       | **Description**                                       |
+| ------------------- | ----------------------------------------------------- |
+| DOMAIN              | 域名（必须）                                          |
+| EMAIL               | 用于申请证书（必须）                                  |
+| USERNAME            | 用户名，默认随机（重启重置）                          |
+| PASSWORD            | 密码，默认随机（重启重置）                            |
+| UUID                | uuid，默认随机（重启重置）                            |
+| LEVEL               | 日志级别，默认 warn                                   |
+| LABEL               | 节点标签，用于区分不同节点的配置，默认随机            |
+| CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)            |
+| TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(无任何其他服务开启)  |
+| NAIVE_PORT          | Naive 端口，默认 0(关闭)                              |
+| VLESS_PORT          | Vless 端口，默认 0(关闭)                              |
+| TUIC_PORT           | Tuic 端口，默认 0(关闭)                               |
+| HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                          |
+| HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100                |
+| HYSTERIA_DOWN_SPEED | Hysteria2 下载端口速率(Mbps)，默认 100                |
+| CLIENT_CLASH_PORT   | clash api 端口（client.json），默认 9090              |
+| CLIENT_CLASH_UI     | clash api URI，默认 ui                                |
+| SUB_API_URL         | Subscribe 服务的 URL，用于上传 client.json，整合配置  |
+| SUB_API_TOKEN       | Subscribe 服务的 Token，用于上传 client.json          |
+| SUB_UPLOAD_LEVEL    | 0=不上传，1=仅 1 次(默认)，2=每日 1 次，3=每小时 1 次 |
 
 
 
 **其他相关命令**
 
 ```shell
-# 永久开启 BBR
-{ \
-echo "net.core.default_qdisc=fq"; \
-echo "net.ipv4.tcp_congestion_control=bbr"; \
-}  > /etc/sysctl.d/90-bbr.conf
-sysctl --system
-
 # 查看账密等信息（如果没有设置相应的变量，重启后会重置）
 docker compose logs | grep -Ei 'network|secret'
 
