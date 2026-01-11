@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.24.5-alpine AS aaa
+FROM --platform=$BUILDPLATFORM golang:1.25.5-alpine AS aaa
 ARG TARGETOS TARGETARCH VERSION SRC_DIR
 ENV GOOS=$TARGETOS
 ENV GOARCH=$TARGETARCH
@@ -10,7 +10,7 @@ RUN go build -v -trimpath -tags "with_quic with_acme with_utls" \
     -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
     ./cmd/sing-box
 
-FROM alpine:3.22.1
+FROM alpine:3.23.2
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box
 RUN apk upgrade --no-cache \
     && apk add --no-cache pwgen tzdata ca-certificates yq curl bind-tools

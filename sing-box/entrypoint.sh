@@ -96,6 +96,9 @@ server_create_trojan() {
             "email": "",
             "provider": "letsencrypt"
         }
+    },
+    "multiplex": {
+        "enabled": true
     }
 }
 EOF
@@ -312,6 +315,9 @@ client_create_trojan() {
             "enabled": true,
             "fingerprint": "chrome"
         }
+    },
+    "multiplex": {
+        "enabled": true
     }
 }
 EOF
