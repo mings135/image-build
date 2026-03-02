@@ -262,7 +262,7 @@ if [ ! -e ${RECORD_FILE} ]; then
     echo '$(date +"%Y/%m/%d %H:%M"): script init' > ${RECORD_FILE}
     IS_INIT=1
 fi
-for i in \$(grep '${HTTP_DIR}.*crt;' ${HTTP_DIR}/*.conf | awk -F ' ' '{print \$NF}' | sed 's/;//')
+for i in \$(grep '${CERTS_DIR}.*crt;' ${HTTP_DIR}/*.conf | awk -F ' ' '{print \$NF}' | sed 's/;//')
 do
     cert_md5=\$(md5sum \${i} | awk '{print \$1}')
     if ! grep -q "\${cert_md5}" ${RECORD_FILE}; then
