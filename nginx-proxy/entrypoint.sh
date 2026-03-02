@@ -113,62 +113,6 @@ EOF
 EOF
 }
 
-nginx_test_config(){
-    local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
-    
-    cat >${CONFIG_FILE} <<"EOF"
-user  nginx;
-worker_processes  auto;
-
-error_log  /var/log/nginx/error.log notice;
-pid        /var/run/nginx.pid;
-
-events {
-    worker_connections  1024;
-}
-
-http {
-    include       /etc/nginx/mime.types;
-    default_type  application/octet-stream;
-
-    log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
-                      '$status $body_bytes_sent "$http_referer" '
-                      '"$http_user_agent" "$http_x_forwarded_for"';
-
-    access_log  /var/log/nginx/access.log  main;
-
-    sendfile        on;
-    #tcp_nopush     on;
-
-    keepalive_timeout  65;
-EOF
-
-    cat >>${CONFIG_FILE} <<EOF
-
-    server {
-        listen       443 ssl;
-        server_name  ${tmp_domain};
-
-        ssl_session_timeout 5m;
-        ssl_session_cache shared:SSL:50m;
-        ssl_certificate $(eval echo "${CERT_CRT_FILE}");
-        ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
-
-
-        location / {
-            root   /usr/share/nginx/html;
-            index  index.html index.htm;
-        }
-
-        error_page   500 502 503 504  /50x.html;
-        location = /50x.html {
-            root   /usr/share/nginx/html;
-        }
-    }
-}
-EOF
-}
-
 nginx_http_config() {
     local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
@@ -234,10 +178,7 @@ nginx_proxy_config() {
     for i in $(seq 1 9); do
         tmp_proxy=$(eval echo '$PROXY'"$i")
         if [ "${tmp_proxy}" ]; then
-            if [[ "${tmp_proxy}" =~ "^test," ]]; then
-                nginx_test_config "${tmp_proxy}"
-                break
-            elif [[ "${tmp_proxy}" =~ "^https?," ]]; then
+            if [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
             else
                 nginx_stream_config "${tmp_proxy}" $i
@@ -262,7 +203,7 @@ if [ ! -e ${RECORD_FILE} ]; then
     echo '$(date +"%Y/%m/%d %H:%M"): script init' > ${RECORD_FILE}
     IS_INIT=1
 fi
-for i in \$(grep '${CERTS_DIR}.*crt;' ${HTTP_DIR}/*.conf | awk -F ' ' '{print \$NF}' | sed 's/;//')
+for i in \$(grep '${CERTS_DIR}.*crt;' ${HTTP_DIR}/*.conf | awk '{print \$NF}' | sed 's/;//')
 do
     cert_md5=\$(md5sum \${i} | awk '{print \$1}')
     if ! grep -q "\${cert_md5}" ${RECORD_FILE}; then
