@@ -10,7 +10,7 @@ on:
         description: "The tag version you want to build"
         required: true
         type: string
-        default: "nginx-proxy/1.27.3-alpine"
+        default: "nginx-proxy/1.29.5-alpine"
 
 jobs:
   build:
