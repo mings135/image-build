@@ -3,16 +3,19 @@ set -e
 
 # PROXY1=http,web.mqgo.top,1.1.1.1:80
 # PROXY2=app,app.mqgo.top,2.2.2.2:443
-# CERT_SOURCE=certbot
-# volume /etc/nginx/certs --> sing-box /root/.local/share/certmagic(default) or certbot /etc/letsencrypt
+
+# CERT_SOURCE=sing-box volume(default): ./certs:/root/.local/share/certmagic(sing-box) and ./certs:/etc/nginx/certs(nginx-proxy)
+# CERT_SOURCE=certbot volume: /etc/letsencrypt:/etc/nginx/certs(nginx-proxy) and install certbot
+
 
 variable_by_const() {
     CONFIG_DIR='/etc/nginx'
     CONFIG_FILE="${CONFIG_DIR}/nginx.conf"
+    CERTS_DIR="${CONFIG_DIR}/certs"
     HTTP_DIR="${CONFIG_DIR}/conf.d"
-    STREAM_DIR="${CONFIG_DIR}/stream-conf.d"
-    CRONTAB_DIR="/etc/periodic/daily"
-    RECORD_DIR="/tmp"
+    STREAM_DIR="${CONFIG_DIR}/stream.d"
+    CRONTAB_FILE="/etc/periodic/daily/check.sh"
+    RECORD_FILE="/tmp/record.log"
 }
 
 variable_by_env() {
@@ -24,12 +27,12 @@ variable_by_auto() {
     # 这里的 tmp_domain 在后面 cat 中 2 次解析后，变成需要值
     local cert_name='${tmp_domain}.crt'
     local key_name='${tmp_domain}.key'
-    local cert_prefix='certs/certificates/acme-v02.api.letsencrypt.org-directory/${tmp_domain}'
+    local cert_prefix="${CERTS_DIR}/certificates/acme-v02.api.letsencrypt.org-directory/\${tmp_domain}"
     
     if [ "${CERT_SOURCE}" = 'certbot' ]; then
         cert_name='fullchain.pem'
         key_name='privkey.pem'
-        cert_prefix='certs/live/${tmp_domain}'
+        cert_prefix="${CERTS_DIR}/live/\${tmp_domain}"
     fi
 
     CERT_CRT_FILE="${cert_prefix}/${cert_name}"
@@ -37,56 +40,12 @@ variable_by_auto() {
 }
 
 check_and_init() {
-    if grep -q 'ssl_preread_server_name' ${CONFIG_FILE}; then
-        echo "Already configured, Skip!"
-        exit 0
-    fi
     if [ ! "${PROXY1}" ]; then
-        echo "ERROR: Proxy env not config!"
+        echo "ERROR: PROXY1 not config!"
         exit 1
     fi
-    if [ ! -e ${HTTP_DIR} ]; then
-        mkdir -p ${HTTP_DIR}
-    fi
-    if [ ! -e ${STREAM_DIR} ]; then
-        mkdir -p ${STREAM_DIR}
-    fi
-    if [ -e ${HTTP_DIR}/default.conf ]; then
-        rm ${HTTP_DIR}/default.conf
-    fi
-}
-
-nginx_reload_script() {
-    local tmp_domain=$1
-    local tmp_cert_file=${CONFIG_DIR}/$(eval echo "${CERT_CRT_FILE}")
-    local tmp_record_file=${RECORD_DIR}/${tmp_domain}.md
-
-    cat >${CRONTAB_DIR}/${tmp_domain}.sh <<EOF
-#!/bin/sh
-
-CERT_FILE="${tmp_cert_file}"
-RECORD_FILE="${tmp_record_file}"
-EOF
-
-    cat >>${CRONTAB_DIR}/${tmp_domain}.sh <<"EOF"
-if [ ! -e ${CERT_FILE} ]; then
-    echo "$(date +"%Y/%m/%d %H:%M"): Not found ${CERT_FILE}" >> /tmp/script.log
-    exit 1
-fi
-new_md5=$(md5sum ${CERT_FILE} | awk '{print $1}')
-if [ -e ${RECORD_FILE} ]; then
-    old_md5=$(cat ${RECORD_FILE})
-    if [ "${old_md5}" != "${new_md5}" ]; then
-        nginx -s reload
-        echo "$(date +"%Y/%m/%d %H:%M"): reload nginx" >> /tmp/script.log
-    fi
-else
-    echo "${new_md5}" > ${RECORD_FILE}
-    echo "$(date +"%Y/%m/%d %H:%M"): create ${RECORD_FILE}" >> /tmp/script.log
-fi
-EOF
-    chmod 755 ${CRONTAB_DIR}/${tmp_domain}.sh
-    ${CRONTAB_DIR}/${tmp_domain}.sh
+    rm -rf ${HTTP_DIR} && mkdir -p ${HTTP_DIR}
+    rm -rf ${STREAM_DIR} && mkdir -p ${STREAM_DIR}
 }
 
 nginx_basic_config() {
@@ -125,10 +84,16 @@ http {
     proxy_set_header X-Real-IP $proxy_protocol_addr;
     proxy_set_header X-Forwarded-For $proxy_protocol_addr,$proxy_add_x_forwarded_for;
 
-    include /etc/nginx/conf.d/*.conf;
+EOF
+
+    cat >>${CONFIG_FILE} <<EOF
+    include ${HTTP_DIR}/*.conf;
 }
 
+EOF
 
+
+    cat >>${CONFIG_FILE} <<"EOF"
 stream {
     map $ssl_preread_server_name $name {
     }
@@ -140,50 +105,15 @@ stream {
         proxy_protocol on;
     }
 
-    include /etc/nginx/stream-conf.d/*.conf;
+EOF
+
+    cat >>${CONFIG_FILE} <<EOF
+    include ${STREAM_DIR}/*.conf;
 }
 EOF
 }
 
-nginx_http_config() {
-    local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
-    local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
-    local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
-    local tmp_port=$((10000 + $2))
-
-    cat >${HTTP_DIR}/${tmp_domain}.conf <<EOF
-upstream ${tmp_domain} {
-    server ${tmp_dest};
-}
-
-server {
-    listen 127.0.0.1:${tmp_port} ssl proxy_protocol;
-    server_name ${tmp_domain};
-    http2 on;
-    
-    ssl_session_timeout 5m;
-    ssl_session_cache shared:SSL:50m;
-    ssl_certificate $(eval echo "${CERT_CRT_FILE}");
-    ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
-
-    location / {
-        proxy_pass ${tmp_protocol}://${tmp_domain};
-    }
-}
-EOF
-
-    cat >${STREAM_DIR}/${tmp_domain}.conf <<EOF
-upstream web-${tmp_port} {
-    server 127.0.0.1:${tmp_port};
-}
-EOF
-
-    sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
-
-    nginx_reload_script "${tmp_domain}"
-}
-
-nginx_default_config(){
+nginx_test_config(){
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     
     cat >${CONFIG_FILE} <<"EOF"
@@ -237,8 +167,42 @@ EOF
     }
 }
 EOF
+}
 
-     nginx_reload_script "${tmp_domain}"
+nginx_http_config() {
+    local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
+    local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
+    local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
+    local tmp_port=$((10000 + $2))
+
+    cat >${HTTP_DIR}/${tmp_domain}.conf <<EOF
+upstream ${tmp_domain} {
+    server ${tmp_dest};
+}
+
+server {
+    listen 127.0.0.1:${tmp_port} ssl proxy_protocol;
+    server_name ${tmp_domain};
+    http2 on;
+    
+    ssl_session_timeout 5m;
+    ssl_session_cache shared:SSL:50m;
+    ssl_certificate $(eval echo "${CERT_CRT_FILE}");
+    ssl_certificate_key $(eval echo "${CERT_KEY_FILE}");
+
+    location / {
+        proxy_pass ${tmp_protocol}://${tmp_domain};
+    }
+}
+EOF
+
+    cat >${STREAM_DIR}/${tmp_domain}.conf <<EOF
+upstream web-${tmp_port} {
+    server 127.0.0.1:${tmp_port};
+}
+EOF
+
+    sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
 }
 
 nginx_stream_config() {
@@ -270,8 +234,8 @@ nginx_proxy_config() {
     for i in $(seq 1 9); do
         tmp_proxy=$(eval echo '$PROXY'"$i")
         if [ "${tmp_proxy}" ]; then
-            if [[ "${tmp_proxy}" =~ "^default," ]]; then
-                nginx_default_config "${tmp_proxy}"
+            if [[ "${tmp_proxy}" =~ "^test," ]]; then
+                nginx_test_config "${tmp_proxy}"
                 break
             elif [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
@@ -288,6 +252,34 @@ nginx_config_opt() {
     sed -i "s/client_max_body_size .*/client_max_body_size ${NGINX_client_max_body_size};/" ${CONFIG_FILE}
 }
 
+nginx_check_script() {
+    cat >${CRONTAB_FILE} <<EOF
+#!/bin/sh
+
+IS_RELOAD=0
+IS_INIT=0
+if [ ! -e ${RECORD_FILE} ]; then
+    echo '$(date +"%Y/%m/%d %H:%M"): script init' > ${RECORD_FILE}
+    IS_INIT=1
+fi
+for i in \$(grep '${HTTP_DIR}.*crt;' ${HTTP_DIR}/*.conf | awk -F ' ' '{print \$NF}' | sed 's/;//')
+do
+    cert_md5=\$(md5sum \${i} | awk '{print \$1}')
+    if ! grep -q "\${cert_md5}" ${RECORD_FILE}; then
+        IS_RELOAD=1
+        echo "\${cert_md5}" >> ${RECORD_FILE}
+    fi
+done
+
+if [ \${IS_RELOAD} -eq 1 ] && [ \${IS_INIT} -eq 0 ]; then
+    nginx -s reload
+    echo "$(date +"%Y/%m/%d %H:%M"): reload nginx" >> ${RECORD_FILE}
+fi
+EOF
+    chmod 755 ${CRONTAB_FILE}
+    ${CRONTAB_FILE}
+}
+
 main() {
     variable_by_const
     variable_by_env
@@ -296,6 +288,7 @@ main() {
     nginx_basic_config
     nginx_proxy_config
     nginx_config_opt
+    nginx_check_script
 }
 
 main
