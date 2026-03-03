@@ -9,11 +9,21 @@ variable_by_const() {
     # client
     CLIENT_FILE=${CONFIG_DIR}/client.json
     CLIENT_TMP=/tmp/client-tmp.json
+    # vless
+    VLESS_FLOW="xtls-rprx-vision"
     # auto
     VERSION=$(sing-box version | grep 'version' | grep -oE '[0-9]+\.[0-9]+')
 }
 
 variable_by_env() {
+    local tmp_keypair=$(sing-box generate reality-keypair | sed 'Ns/\n/ /')
+    local tmp_private=$(echo "${tmp_keypair}" | awk '{print $2}')
+    local tmp_public=$(echo "${tmp_keypair}" | awk '{print $NF}')
+    # reality variable
+    PUBLIC_KEY=${PUBLIC_KEY:-"${tmp_public}"}
+    PRIVATE_KEY=${PRIVATE_KEY:-"${tmp_private}"}
+    SHORT_ID=${SHORT_ID:-"$(sing-box generate rand 8 --hex)"}
+    REALITY_DOMAIN=${REALITY_DOMAIN:-"www.microsoft.com"}
     # 获取变量, 否则自动生成
     USERNAME=${USERNAME:-"$(pwgen 4 1 -s -0)"}
     PASSWORD=${PASSWORD:-"$(pwgen 16 1 -s)"}
@@ -99,16 +109,20 @@ server_create_vless() {
   "users": [
     {
       "uuid": "",
-      "flow": "xtls-rprx-vision"
+      "flow": ""
     }
   ],
   "tls": {
     "enabled": true,
-    "alpn": ["h2", "http/1.1"],
-    "acme": {
-      "domain": [],
-      "email": "",
-      "provider": "letsencrypt"
+    "server_name": "",
+    "reality": {
+      "enabled": true,
+      "handshake": {
+        "server": "",
+        "server_port": 443
+      },
+      "private_key": "",
+      "short_id": []
     }
   }
 }
@@ -196,6 +210,11 @@ server_generate_config() {
         server_create_trojan
         tmp_var=${TROJAN_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
         tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
+        for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
+        do
+            tmp_var=${i} yq -ioj '.tls.acme.domain += strenv(tmp_var)' ${SERVER_TMP}
+        done
+        tmp_var=${EMAIL} yq -ioj '.tls.acme.email = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
@@ -205,6 +224,11 @@ server_generate_config() {
         server_create_vless
         tmp_var=${VLESS_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
         tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${VLESS_FLOW} yq -ioj '.users[0].flow = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.server_name = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.reality.handshake.server = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${PRIVATE_KEY} yq -ioj '.tls.reality.private_key = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id += strenv(tmp_var)' ${SERVER_TMP}
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
@@ -215,6 +239,11 @@ server_generate_config() {
         tmp_var=${TUIC_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
         tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
+        for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
+        do
+            tmp_var=${i} yq -ioj '.tls.acme.domain += strenv(tmp_var)' ${SERVER_TMP}
+        done
+        tmp_var=${EMAIL} yq -ioj '.tls.acme.email = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
@@ -226,16 +255,14 @@ server_generate_config() {
         tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${SERVER_TMP}
         tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${SERVER_TMP}
         tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
+        for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
+        do
+            tmp_var=${i} yq -ioj '.tls.acme.domain += strenv(tmp_var)' ${SERVER_TMP}
+        done
+        tmp_var=${EMAIL} yq -ioj '.tls.acme.email = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
-
-    # server config modify about tls
-    for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
-    do
-        tmp_var=${i} yq -ioj '.inbounds[].tls.acme.domain += strenv(tmp_var)' ${SERVER_FILE}
-    done
-    tmp_var=${EMAIL} yq -ioj '.inbounds[].tls.acme.email = strenv(tmp_var)' ${SERVER_FILE}
 }
 
 # ------ client ------
@@ -269,14 +296,21 @@ client_create_vless() {
   "server": "",
   "server_port": 443,
   "uuid": "",
-  "flow": "xtls-rprx-vision",
+  "flow": "",
   "tls": {
     "enabled": true,
+    "server_name": "",
     "utls": {
       "enabled": true,
       "fingerprint": "chrome"
+    },
+    "reality": {
+      "enabled": true,
+      "public_key": "",
+      "short_id": ""
     }
-  }
+  },
+  "packet_encoding": "xudp"
 }
 EOF
 }
@@ -512,6 +546,10 @@ client_generate_config() {
         tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${VLESS_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${VLESS_FLOW} yq -ioj '.flow = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${PUBLIC_KEY} yq -ioj '.tls.reality.public_key = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
         tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${vless_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
@@ -680,7 +718,11 @@ main() {
         echo "Secret username: ${USERNAME}"
         echo "Secret password: ${PASSWORD}"
         echo "Secret uuid: ${UUID}"
-        echo "Secret vless flow: xtls-rprx-vision"
+        echo "Secret vless flow: ${VLESS_FLOW}"
+        echo "Secret public key: ${PUBLIC_KEY}"
+        echo "Secret private key: ${PRIVATE_KEY}"
+        echo "Secret short id: ${SHORT_ID}"
+        echo "Secret reality domain: ${REALITY_DOMAIN}"
     fi
 
     if [ -e ${CLIENT_FILE} ] && [ "${SUB_API_TOKEN}" ] && [ "${SUB_API_URL}" ]; then
