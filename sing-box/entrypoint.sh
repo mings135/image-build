@@ -5,21 +5,10 @@ variable_by_const() {
     CONFIG_DIR="/etc/sing-box"
     # server
     SERVER_FILE=${CONFIG_DIR}/config.json
-    SERVER_TROJAN=${CONFIG_DIR}/trojan.json
-    SERVER_NAIVE=${CONFIG_DIR}/naive.json
-    SERVER_VLESS=${CONFIG_DIR}/vless.json
-    SERVER_TUIC=${CONFIG_DIR}/tuic.json
-    SERVER_HYSTERIA2=${CONFIG_DIR}/hysteria2.json
+    SERVER_TMP=/tmp/server-tmp.json
     # client
     CLIENT_FILE=${CONFIG_DIR}/client.json
-    CLIENT_TROJAN=${CONFIG_DIR}/client-trojan.json
-    CLIENT_VLESS=${CONFIG_DIR}/client-vless.json
-    CLIENT_TUIC=${CONFIG_DIR}/client-tuic.json
-    CLIENT_HYSTERIA2=${CONFIG_DIR}/client-hysteria2.json
-    CLIENT_ROUTE=${CONFIG_DIR}/client-route.json
-    # client deprecated about version
-    CLIENT_TMP1=${CONFIG_DIR}/client-tmp1.json
-    CLIENT_TMP2=${CONFIG_DIR}/client-tmp2.json
+    CLIENT_TMP=/tmp/client-tmp.json
     # auto
     VERSION=$(sing-box version | grep 'version' | grep -oE '[0-9]+\.[0-9]+')
 }
@@ -74,144 +63,109 @@ compare_version_ge() {
 
 # ------ server ------
 server_create_trojan() {
-    cat >${SERVER_TROJAN} <<"EOF"
+    cat >${SERVER_TMP} <<"EOF"
 {
-    "type": "trojan",
-    "tag": "trojan-in",
-    "listen": "::",
-    "listen_port": 443,
-    "users": [
-        {
-            "password": ""
-        }
-    ],
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h2",
-            "http/1.1"
-        ],
-        "acme": {
-            "domain": [],
-            "email": "",
-            "provider": "letsencrypt"
-        }
-    },
-    "multiplex": {
-        "enabled": true
+  "type": "trojan",
+  "tag": "trojan-in",
+  "listen": "::",
+  "listen_port": 443,
+  "users": [
+    {
+      "password": ""
     }
-}
-EOF
-}
-
-server_create_naive() {
-    cat >${SERVER_NAIVE} <<"EOF"
-{
-    "type": "naive",
-    "tag": "naive-in",
-    "listen": "::",
-    "listen_port": 443,
-    "users": [
-        {
-            "username": "",
-            "password": ""
-        }
-    ],
-    "tls": {
-        "enabled": true,
-        "acme": {
-            "domain": [],
-            "email": "",
-            "provider": "letsencrypt"
-        }
+  ],
+  "tls": {
+    "enabled": true,
+    "alpn": ["h2", "http/1.1"],
+    "acme": {
+      "domain": [],
+      "email": "",
+      "provider": "letsencrypt"
     }
+  },
+  "multiplex": {
+    "enabled": true
+  }
 }
 EOF
 }
 
 server_create_vless() {
-    cat >${SERVER_VLESS} <<"EOF"
+    cat >${SERVER_TMP} <<"EOF"
 {
-    "type": "vless",
-    "tag": "vless-in",
-    "listen": "::",
-    "listen_port": 443,
-    "users": [
-        {
-            "uuid": "",
-            "flow": "xtls-rprx-vision"
-        }
-    ],
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h2",
-            "http/1.1"
-        ],
-        "acme": {
-            "domain": [],
-            "email": "",
-            "provider": "letsencrypt"
-        }
+  "type": "vless",
+  "tag": "vless-in",
+  "listen": "::",
+  "listen_port": 443,
+  "users": [
+    {
+      "uuid": "",
+      "flow": "xtls-rprx-vision"
     }
+  ],
+  "tls": {
+    "enabled": true,
+    "alpn": ["h2", "http/1.1"],
+    "acme": {
+      "domain": [],
+      "email": "",
+      "provider": "letsencrypt"
+    }
+  }
 }
 EOF
 }
 
 server_create_tuic() {
-    cat >${SERVER_TUIC} <<"EOF"
+    cat >${SERVER_TMP} <<"EOF"
 {
-    "type": "tuic",
-    "tag": "tuic-in",
-    "listen": "::",
-    "listen_port": 443,
-    "users": [
-        {
-            "uuid": "",
-            "password": ""
-        }
-    ],
-    "congestion_control": "bbr",
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h3"
-        ],
-        "acme": {
-            "domain": [],
-            "email": "",
-            "provider": "letsencrypt"
-        }
+  "type": "tuic",
+  "tag": "tuic-in",
+  "listen": "::",
+  "listen_port": 443,
+  "users": [
+    {
+      "uuid": "",
+      "password": ""
     }
+  ],
+  "congestion_control": "bbr",
+  "tls": {
+    "enabled": true,
+    "alpn": ["h3"],
+    "acme": {
+      "domain": [],
+      "email": "",
+      "provider": "letsencrypt"
+    }
+  }
 }
 EOF
 }
 
 server_create_hysteria2() {
-    cat >${SERVER_HYSTERIA2} <<"EOF"
+    cat >${SERVER_TMP} <<"EOF"
 {
-    "type": "hysteria2",
-    "tag": "hysteria2-in",
-    "listen": "::",
-    "listen_port": 443,
-    "up_mbps": 100,
-    "down_mbps": 100,
-    "users": [
-        {
-            "password": ""
-        }
-    ],
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h3"
-        ],
-        "acme": {
-            "domain": [],
-            "email": "",
-            "provider": "letsencrypt"
-        }
+  "type": "hysteria2",
+  "tag": "hysteria2-in",
+  "listen": "::",
+  "listen_port": 443,
+  "up_mbps": 100,
+  "down_mbps": 100,
+  "users": [
+    {
+      "password": ""
     }
+  ],
+  "tls": {
+    "enabled": true,
+    "alpn": ["h3"],
+    "acme": {
+      "domain": [],
+      "email": "",
+      "provider": "letsencrypt"
+    }
+  }
 }
 EOF
 }
@@ -219,11 +173,11 @@ EOF
 server_create_config() {
     cat >${SERVER_FILE} <<"EOF"
 {
-    "log": {
-        "level": "warn",
-        "timestamp": true
-    },
-    "inbounds": []
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "inbounds": []
 }
 EOF
 }
@@ -241,55 +195,40 @@ server_generate_config() {
     # trojan config
     if [ ${TROJAN_PORT} -ne 0 ]; then
         server_create_trojan
-        tmp_var=${TROJAN_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TROJAN}
-        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TROJAN}
+        tmp_var=${TROJAN_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
-        tmp_var=${SERVER_TROJAN} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
-        rm ${SERVER_TROJAN}
-    fi
-
-    # naive config
-    if [ ${NAIVE_PORT} -ne 0 ]; then
-        server_create_naive
-        tmp_var=${NAIVE_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_NAIVE}
-        tmp_var=${USERNAME} yq -ioj '.users[0].username = strenv(tmp_var)' ${SERVER_NAIVE}
-        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_NAIVE}
-        # server config change
-        tmp_var=${SERVER_NAIVE} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
-        rm ${SERVER_NAIVE}
+        tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
 
     # vless config
     if [ ${VLESS_PORT} -ne 0 ]; then
         server_create_vless
-        tmp_var=${VLESS_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_VLESS}
-        tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_VLESS}
+        tmp_var=${VLESS_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
-        tmp_var=${SERVER_VLESS} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
-        rm ${SERVER_VLESS}
+        tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
 
     # tuic config
     if [ ${TUIC_PORT} -ne 0 ]; then
         server_create_tuic
-        tmp_var=${TUIC_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TUIC}
-        tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TUIC}
-        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TUIC}
+        tmp_var=${TUIC_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
-        tmp_var=${SERVER_TUIC} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
-        rm ${SERVER_TUIC}
+        tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
 
     # hysteria2 config
     if [ ${HYSTERIA2_PORT} -ne 0 ]; then
         server_create_hysteria2
-        tmp_var=${HYSTERIA2_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_HYSTERIA2}
-        tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${SERVER_HYSTERIA2}
-        tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${SERVER_HYSTERIA2}
-        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_HYSTERIA2}
+        tmp_var=${HYSTERIA2_PORT} yq -ioj '.listen_port = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${SERVER_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.users[0].password = strenv(tmp_var)' ${SERVER_TMP}
         # server config change
-        tmp_var=${SERVER_HYSTERIA2} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
-        rm ${SERVER_HYSTERIA2}
+        tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
 
     # server config modify about tls
@@ -302,83 +241,79 @@ server_generate_config() {
 
 # ------ client ------
 client_create_trojan() {
-    cat >${CLIENT_TROJAN} <<"EOF"
+    cat >${CLIENT_TMP} <<"EOF"
 {
-    "type": "trojan",
-    "tag": "trojan-out",
-    "server": "",
-    "server_port": 443,
-    "password": "",
-    "tls": {
-        "enabled": true,
-        "utls": {
-            "enabled": true,
-            "fingerprint": "chrome"
-        }
-    },
-    "multiplex": {
-        "enabled": true
+  "type": "trojan",
+  "tag": "trojan-out",
+  "server": "",
+  "server_port": 443,
+  "password": "",
+  "tls": {
+    "enabled": true,
+    "utls": {
+      "enabled": true,
+      "fingerprint": "chrome"
     }
+  },
+  "multiplex": {
+    "enabled": true
+  }
 }
 EOF
 }
 
 client_create_vless() {
-    cat >${CLIENT_VLESS} <<"EOF"
+    cat >${CLIENT_TMP} <<"EOF"
 {
-    "type": "vless",
-    "tag": "vless-out",
-    "server": "",
-    "server_port": 443,
-    "uuid": "",
-    "flow": "xtls-rprx-vision",
-    "tls": {
-        "enabled": true,
-        "utls": {
-            "enabled": true,
-            "fingerprint": "chrome"
-        }
+  "type": "vless",
+  "tag": "vless-out",
+  "server": "",
+  "server_port": 443,
+  "uuid": "",
+  "flow": "xtls-rprx-vision",
+  "tls": {
+    "enabled": true,
+    "utls": {
+      "enabled": true,
+      "fingerprint": "chrome"
     }
+  }
 }
 EOF
 }
 
 client_create_tuic() {
-    cat >${CLIENT_TUIC} <<"EOF"
+    cat >${CLIENT_TMP} <<"EOF"
 {
-    "type": "tuic",
-    "tag": "tuic-out",
-    "server": "",
-    "server_port": 443,
-    "uuid": "",
-    "password": "",
-    "congestion_control": "bbr",
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h3"
-        ]
-    }
+  "type": "tuic",
+  "tag": "tuic-out",
+  "server": "",
+  "server_port": 443,
+  "uuid": "",
+  "password": "",
+  "congestion_control": "bbr",
+  "tls": {
+    "enabled": true,
+    "alpn": ["h3"]
+  }
 }
 EOF
 }
 
 client_create_hysteria2() {
-    cat >${CLIENT_HYSTERIA2} <<"EOF"
+    cat >${CLIENT_TMP} <<"EOF"
 {
-    "type": "hysteria2",
-    "tag": "hysteria2-out",
-    "server": "",
-    "server_port": 443,
-    "up_mbps": 100,
-    "down_mbps": 100,
-    "password": "",
-    "tls": {
-        "enabled": true,
-        "alpn": [
-            "h3"
-        ]
-    }
+  "type": "hysteria2",
+  "tag": "hysteria2-out",
+  "server": "",
+  "server_port": 443,
+  "up_mbps": 100,
+  "down_mbps": 100,
+  "password": "",
+  "tls": {
+    "enabled": true,
+    "alpn": ["h3"]
+  }
 }
 EOF
 }
@@ -386,177 +321,149 @@ EOF
 client_create_config() {
     cat >${CLIENT_FILE} <<"EOF"
 {
-    "log": {
-        "level": "warn",
-        "timestamp": true
-    },
-    "inbounds": [
-        {
-            "type": "tun",
-            "tag": "tun-in",
-            "interface_name": "tun0",
-            "inet4_address": "172.19.0.1/30",
-            "inet6_address": "fdfe::1/126",
-            "mtu": 1492,
-            "auto_route": true,
-            "strict_route": true,
-            "stack": "system",
-            "sniff": true,
-            "sniff_override_destination": false
-        }
-    ],
-    "outbounds": [
-        {
-            "type": "selector",
-            "tag": "proxy",
-            "outbounds": [],
-            "interrupt_exist_connections": false
-        },
-        {
-            "type": "urltest",
-            "tag": "auto",
-            "outbounds": [],
-            "interrupt_exist_connections": false
-        },
-        {
-            "type": "direct",
-            "tag": "direct"
-        },
-        {
-            "type": "block",
-            "tag": "block"
-        },
-        {
-            "type": "dns",
-            "tag": "dns"
-        }
-    ],
-    "dns": {
-        "servers": [
-            {
-                "tag": "google",
-                "address": "tls://8.8.8.8",
-                "strategy": "ipv4_only",
-                "detour": "proxy"
-            },
-            {
-                "tag": "aliyun",
-                "address": "223.5.5.5",
-                "strategy": "ipv4_only",
-                "detour": "direct"
-            },
-            {
-                "tag": "remote",
-                "address": "fakeip",
-                "strategy": "ipv4_only"
-            }
-        ],
-        "rules": [
-            {
-                "outbound": "any",
-                "server": "aliyun"
-            },
-            {
-                "query_type": [
-                    "A",
-                    "AAAA"
-                ],
-                "server": "remote"
-            }
-        ],
-        "fakeip": {
-            "enabled": true,
-            "inet4_range": "198.18.0.0/15",
-            "inet6_range": "fc00::/18"
-        },
-        "independent_cache": true
+  "log": {
+    "level": "warn",
+    "timestamp": true
+  },
+  "dns": {},
+  "inbounds": [
+    {
+      "type": "tun",
+      "interface_name": "tun0",
+      "mtu": 9000,
+      "auto_route": true,
+      "strict_route": true,
+      "address": ["172.19.0.1/30", "fdfe::1/126"]
     }
+  ],
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "proxy",
+      "outbounds": [],
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [],
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
+  ],
+  "route": {},
+  "experimental": {}
+}
+EOF
+}
+
+client_create_dns() {
+    cat >${CLIENT_TMP} <<"EOF"
+{
+  "servers": [
+    {
+      "tag": "google",
+      "type": "tls",
+      "server": "8.8.4.4"
+    },
+    {
+      "tag": "local",
+      "type": "udp",
+      "server": "223.5.5.5"
+    },
+    {
+      "tag": "remote",
+      "type": "fakeip",
+      "inet4_range": "198.18.0.0/15",
+      "inet6_range": "fc00::/18"
+    }
+  ],
+  "rules": [
+    {
+      "query_type": ["A", "AAAA"],
+      "server": "remote"
+    }
+  ],
+  "independent_cache": true,
+  "strategy": "ipv4_only"
 }
 EOF
 }
 
 client_create_route() {
-    cat >${CLIENT_ROUTE} <<"EOF"
+    cat >${CLIENT_TMP} <<"EOF"
 {
-    "rule_set": [
+  "rule_set": [
+    {
+      "type": "remote",
+      "tag": "geoip-cn",
+      "format": "binary",
+      "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
+      "download_detour": "proxy"
+    },
+    {
+      "type": "remote",
+      "tag": "geosite-geolocation-cn",
+      "format": "binary",
+      "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs",
+      "download_detour": "proxy"
+    },
+    {
+      "type": "remote",
+      "tag": "geosite-geolocation-!cn",
+      "format": "binary",
+      "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
+      "download_detour": "proxy"
+    }
+  ],
+  "rules": [
+    { "action": "sniff" },
+    {
+      "type": "logical",
+      "mode": "or",
+      "rules": [{ "protocol": "dns" }, { "port": 53 }],
+      "action": "hijack-dns"
+    },
+    {
+      "ip_is_private": true,
+      "outbound": "direct"
+    },
+    {
+      "type": "logical",
+      "mode": "or",
+      "rules": [
+        { "port": 853 },
         {
-            "type": "remote",
-            "tag": "geoip-cn",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geoip/rule-set/geoip-cn.srs",
-            "download_detour": "proxy"
+          "network": "udp",
+          "port": 443
         },
+        { "protocol": "stun" }
+      ],
+      "action": "reject"
+    },
+    {
+      "rule_set": "geosite-geolocation-cn",
+      "outbound": "direct"
+    },
+    {
+      "type": "logical",
+      "mode": "and",
+      "rules": [
+        { "rule_set": "geoip-cn" },
         {
-            "type": "remote",
-            "tag": "geosite-geolocation-cn",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs",
-            "download_detour": "proxy"
-        },
-        {
-            "type": "remote",
-            "tag": "geosite-geolocation-!cn",
-            "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-!cn.srs",
-            "download_detour": "proxy"
+          "rule_set": "geosite-geolocation-!cn",
+          "invert": true
         }
-    ],
-    "rules": [
-        {
-            "type": "logical",
-            "mode": "or",
-            "rules": [
-                {
-                    "protocol": "dns"
-                },
-                {
-                    "port": 53
-                }
-            ],
-            "outbound": "dns"
-        },
-        {
-            "ip_is_private": true,
-            "outbound": "direct"
-        },
-        {
-            "type": "logical",
-            "mode": "or",
-            "rules": [
-                {
-                    "port": 853
-                },
-                {
-                    "network": "udp",
-                    "port": 443
-                },
-                {
-                    "protocol": "stun"
-                }
-            ],
-            "outbound": "block"
-        },
-        {
-            "rule_set": "geosite-geolocation-cn",
-            "outbound": "direct"
-        },
-        {
-            "type": "logical",
-            "mode": "and",
-            "rules": [
-                {
-                    "rule_set": "geoip-cn"
-                },
-                {
-                    "rule_set": "geosite-geolocation-!cn",
-                    "invert": true
-                }
-            ],
-            "outbound": "direct"
-        }
-    ],
-    "final": "proxy",
-    "auto_detect_interface": true
+      ],
+      "outbound": "direct"
+    }
+  ],
+  "final": "proxy",
+  "auto_detect_interface": true,
+  "default_domain_resolver": "local"
 }
 EOF
 }
@@ -574,73 +481,71 @@ client_generate_config() {
     local proxy_index=$(yq -roj '.outbounds[] | select(.tag == "proxy") | key' ${CLIENT_FILE})
     local auto_index=$(yq -roj '.outbounds[] | select(.tag == "auto") | key' ${CLIENT_FILE})
 
+    # client dns config
+    client_create_dns
+    tmp_var=${CLIENT_TMP} yq -ioj '.dns = load(strenv(tmp_var))' ${CLIENT_FILE}
+
     # client route config
     client_create_route
-    tmp_var=${CLIENT_ROUTE} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_FILE}
-    rm ${CLIENT_ROUTE}
+    tmp_var=${CLIENT_TMP} yq -ioj '.route = load(strenv(tmp_var))' ${CLIENT_FILE}
 
     # client cache_file
     tmp_var="true" yq -ioj '.experimental.cache_file.enabled = env(tmp_var)' ${CLIENT_FILE}
-    tmp_var="cache.db" yq -ioj '.experimental.cache_file.path = strenv(tmp_var)' ${CLIENT_FILE}
-    tmp_var="true" yq -ioj '.experimental.cache_file.store_fakeip = env(tmp_var)' ${CLIENT_FILE}
+    tmp_var="true" yq -ioj '.experimental.cache_file.store_rdrc = env(tmp_var)' ${CLIENT_FILE}
     
     # client trojan
     if [ ${TROJAN_PORT} -ne 0 ]; then
         client_create_trojan
-        tmp_var=${trojan_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TROJAN}
-        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TROJAN}
-        tmp_var=${TROJAN_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TROJAN}
-        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TROJAN}
+        tmp_var=${trojan_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${TROJAN_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
-        tmp_var=${CLIENT_TROJAN} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
+        tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${trojan_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
         tmp_key=${auto_index} tmp_var=${trojan_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
-        rm ${CLIENT_TROJAN}
     fi
 
     # client vless
     if [ ${VLESS_PORT} -ne 0 ]; then
         client_create_vless
-        tmp_var=${vless_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_VLESS}
-        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_VLESS}
-        tmp_var=${VLESS_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_VLESS}
-        tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_VLESS}
+        tmp_var=${vless_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${VLESS_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
-        tmp_var=${CLIENT_VLESS} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
+        tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${vless_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
         tmp_key=${auto_index} tmp_var=${vless_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
-        rm ${CLIENT_VLESS}
     fi
 
     # client tuic
     if [ ${TUIC_PORT} -ne 0 ]; then
         client_create_tuic
-        tmp_var=${tuic_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TUIC}
-        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TUIC}
-        tmp_var=${TUIC_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TUIC}
-        tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TUIC}
-        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TUIC}
+        tmp_var=${tuic_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${TUIC_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
-        tmp_var=${CLIENT_TUIC} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
+        tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${tuic_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
         tmp_key=${auto_index} tmp_var=${tuic_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
-        rm ${CLIENT_TUIC}
     fi
 
     # client hysteria2
     if [ ${HYSTERIA2_PORT} -ne 0 ]; then
         client_create_hysteria2
-        tmp_var=${hysteria2_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_HYSTERIA2}
-        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_HYSTERIA2}
-        tmp_var=${HYSTERIA2_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_HYSTERIA2}
-        tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${CLIENT_HYSTERIA2}
-        tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${CLIENT_HYSTERIA2}
-        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_HYSTERIA2}
+        tmp_var=${hysteria2_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${HYSTERIA2_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
-        tmp_var=${CLIENT_HYSTERIA2} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
+        tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${hysteria2_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
         tmp_key=${auto_index} tmp_var=${hysteria2_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
-        rm ${CLIENT_HYSTERIA2}
     fi
 
     # client clash_api
@@ -650,82 +555,18 @@ client_generate_config() {
     fi   
 }
 
-# Deprecated changes about version
-client_deprecated_ver1_12() {
-    # 重写 .dns and .inbounds
-    cat >${CLIENT_TMP1} <<"EOF"
-{
-  "servers":
-    [
-      { "tag": "google", "type": "tls", "server": "8.8.4.4" },
-      { "tag": "local", "type": "udp", "server": "223.5.5.5" },
-      {
-        "tag": "remote",
-        "type": "fakeip",
-        "inet4_range": "198.18.0.0/15",
-        "inet6_range": "fc00::/18",
-      },
-    ],
-  "rules": [{ "query_type": ["A", "AAAA"], "server": "remote" }],
-  "independent_cache": true,
-  "strategy": "ipv4_only",
-}
-EOF
-
-    cat >${CLIENT_TMP2} <<"EOF"
-[
-  {
-    "type": "tun",
-    "interface_name": "tun0",
-    "mtu": 1492,
-    "auto_route": true,
-    "strict_route": true,
-    "stack": "system",
-    "address": ["172.19.0.1/30", "fdfe::1/126"],
-  },
-]
-EOF
-}
-
 client_deprecated_changes() {
-    # Deprecated changes about sing-box v1.10
-    if compare_version_ge "${VERSION}" "1.10"; then
-        yq -ioj 'del(.inbounds[0].inet4_address)' ${CLIENT_FILE}
-        yq -ioj 'del(.inbounds[0].inet6_address)' ${CLIENT_FILE}
-        yq -ioj '.inbounds[0].address[0] = "172.19.0.1/30"' ${CLIENT_FILE}
-        yq -ioj '.inbounds[0].address[1] = "fdfe::1/126"' ${CLIENT_FILE}
-    fi
-
-    # Deprecated changes about sing-box v1.11
-    if compare_version_ge "${VERSION}" "1.11"; then
-        # add action to dns and block, and delete dns and block in outbounds and rules
-        yq -ioj 'with(.route.rules; .[] | select(.outbound == "dns").action = "hijack-dns")' ${CLIENT_FILE}
-        yq -ioj 'with(.route.rules; .[] | select(.outbound == "block").action = "reject")' ${CLIENT_FILE}
-        yq -ioj 'del(.route.rules[] | select(.outbound == "dns").outbound)' ${CLIENT_FILE}
-        yq -ioj 'del(.route.rules[] | select(.outbound == "block").outbound)' ${CLIENT_FILE}
-        yq -ioj 'del(.outbounds[] | select(.type == "dns"))' ${CLIENT_FILE}
-        yq -ioj 'del(.outbounds[] | select(.type == "block"))' ${CLIENT_FILE}
-        # add action to sniff, and delete sniff in inbounds
-        yq -ioj '.route.rules = [{"action": "sniff"}] + .route.rules' ${CLIENT_FILE}
-        yq -ioj 'del(.inbounds[0].sniff)' ${CLIENT_FILE}
-    fi
-
-    # Deprecated changes about sing-box v1.12
-    if compare_version_ge "${VERSION}" "1.12"; then
-        client_deprecated_ver1_12
-        tmp_var=${CLIENT_TMP1} yq -ioj '.dns = load(strenv(tmp_var))' ${CLIENT_FILE}
-        rm ${CLIENT_TMP1}
-        tmp_var=${CLIENT_TMP2} yq -ioj '.inbounds = load(strenv(tmp_var))' ${CLIENT_FILE}
-        rm ${CLIENT_TMP2}
-        yq -ioj '.route.default_domain_resolver = "local"' ${CLIENT_FILE}
+    # Deprecated changes about sing-box v1.13
+    if compare_version_ge "${VERSION}" "1.13"; then
+        echo "no changes about sing-box v1.13"
     fi
 }
 
 
 check_variable() {
     # 检查 version
-    if ! compare_version_ge "${VERSION}" "1.8"; then
-        echo "Sing-box version need >= 1.8"
+    if ! compare_version_ge "${VERSION}" "1.12"; then
+        echo "Sing-box version need >= 1.12"
         exit 1
     fi
     # 必须配置 domain
