@@ -488,9 +488,9 @@ client_create_route() {
         },
         {
             "type": "remote",
-            "tag": "geosite-cn",
+            "tag": "geosite-geolocation-cn",
             "format": "binary",
-            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-cn.srs",
+            "url": "https://raw.githubusercontent.com/SagerNet/sing-geosite/rule-set/geosite-geolocation-cn.srs",
             "download_detour": "proxy"
         },
         {
@@ -537,18 +537,19 @@ client_create_route() {
             "outbound": "block"
         },
         {
+            "rule_set": "geosite-geolocation-cn",
+            "outbound": "direct"
+        },
+        {
             "type": "logical",
             "mode": "and",
             "rules": [
                 {
-                    "rule_set": "geosite-geolocation-!cn",
-                    "invert": true
+                    "rule_set": "geoip-cn"
                 },
                 {
-                    "rule_set": [
-                        "geoip-cn",
-                        "geosite-cn"
-                    ]
+                    "rule_set": "geosite-geolocation-!cn",
+                    "invert": true
                 }
             ],
             "outbound": "direct"
