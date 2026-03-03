@@ -102,8 +102,7 @@ services:
 | LEVEL               | 日志级别，默认 warn                                   |
 | LABEL               | 节点标签，用于区分不同节点的配置，默认随机            |
 | CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)            |
-| TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(无任何其他服务开启)  |
-| NAIVE_PORT          | Naive 端口，默认 0(关闭)                              |
+| TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(所有服务关闭时开启)  |
 | VLESS_PORT          | Vless 端口，默认 0(关闭)                              |
 | TUIC_PORT           | Tuic 端口，默认 0(关闭)                               |
 | HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                          |
@@ -150,10 +149,7 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 
 **构建 nginx-proxy image**
 
-- 在官方 nginx:*-alpine 修改版，用于 sing-box + web 的代理
-
-- 手动更新，仅代理 HTTPS/SSL
-
+- 官方 nginx:*-alpine 修改版，根据域名不同，代理不同的 4 层或 7 层相关的服务(sing-box and web)
 - docker-compose.yaml
 
 ```yaml

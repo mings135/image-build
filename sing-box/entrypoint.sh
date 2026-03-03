@@ -22,7 +22,6 @@ variable_by_env() {
     LABEL=${LABEL:-"$(pwgen 4 1 -s -0 -A)"}
     # 获取变量, 否则默认为 0, 表示不开启
     TROJAN_PORT=${TROJAN_PORT:-"0"}
-    NAIVE_PORT=${NAIVE_PORT:-"0"}
     VLESS_PORT=${VLESS_PORT:-"0"}
     TUIC_PORT=${TUIC_PORT:-"0"}
     HYSTERIA2_PORT=${HYSTERIA2_PORT:-"0"}
@@ -580,12 +579,12 @@ check_variable() {
         exit 1
     fi
     # 检查 port
-    if ! echo "${TROJAN_PORT}${NAIVE_PORT}${VLESS_PORT}${TUIC_PORT}${HYSTERIA2_PORT}" | grep -Eqi '^[[:digit:]]*$'; then
+    if ! echo "${TROJAN_PORT}${VLESS_PORT}${TUIC_PORT}${HYSTERIA2_PORT}" | grep -Eqi '^[[:digit:]]*$'; then
         echo "Port must be a number"
         exit 1
     fi
     # 如果未设置 port，默认开启 trojan，端口 443
-    local tmp_sum=$((TROJAN_PORT + NAIVE_PORT + VLESS_PORT + TUIC_PORT + HYSTERIA2_PORT))
+    local tmp_sum=$((TROJAN_PORT + VLESS_PORT + TUIC_PORT + HYSTERIA2_PORT))
     if [ ${tmp_sum} -eq 0 ]; then
         TROJAN_PORT=443
     fi
@@ -623,16 +622,17 @@ check_domain() {
 }
 
 upload_client_config() {
-    local cron_dir
+    local tmp_name="subscribe.sh"
+    local cron_file
     if [ ${SUB_UPLOAD_LEVEL} -eq 3 ]; then
-        cron_dir="/etc/periodic/hourly"
+        cron_file="/etc/periodic/hourly/${tmp_name}"
     elif [ ${SUB_UPLOAD_LEVEL} -eq 2 ]; then
-        cron_dir="/etc/periodic/daily"
+        cron_file="/etc/periodic/daily/${tmp_name}"
     else
-        cron_dir="/tmp"
+        cron_file="/tmp/${tmp_name}"
     fi
 
-    cat >${cron_dir}/subscribe.sh <<EOF
+    cat >${cron_file} <<EOF
 #!/bin/sh
 SUB_API_TOKEN="${SUB_API_TOKEN}"
 SUB_API_URL="${SUB_API_URL}"
@@ -640,23 +640,23 @@ CLIENT_FILE="${CLIENT_FILE}"
 ATTEMPT_COUNT=3
 EOF
 
-    cat >>${cron_dir}/subscribe.sh <<'EOF'
+    cat >>${cron_file} <<'EOF'
 for i in $(seq 1 ${ATTEMPT_COUNT}); do
     curl -fsSL -H "Authorization: Bearer ${SUB_API_TOKEN}" -H 'content-type: application/json' -X POST ${SUB_API_URL} -d @${CLIENT_FILE}
     if [ $? -eq 0 ]; then
-        echo "$(date +"%Y/%m/%d %H:%M"): Upload success" >> /tmp/script.log
+        echo "$(date +"%Y/%m/%d %H:%M"): Upload success" >> /tmp/upload-config.log
         break
     fi
-    echo "$(date +"%Y/%m/%d %H:%M"): Upload failed" >> /tmp/script.log
+    echo "$(date +"%Y/%m/%d %H:%M"): Upload failed" >> /tmp/upload-config.log
     if [ $i -ne ${ATTEMPT_COUNT} ]; then
         sleep 20
     fi
 done
 EOF
 
-    chmod +x ${cron_dir}/subscribe.sh
+    chmod +x ${cron_file}
     if [ ${SUB_UPLOAD_LEVEL} -ge 1 ]; then
-        ${cron_dir}/subscribe.sh
+        ${cron_file}
     fi
     if [ ${SUB_UPLOAD_LEVEL} -ge 2 ]; then
         crond
