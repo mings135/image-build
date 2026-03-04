@@ -52,9 +52,9 @@ varialbe_by_auto() {
     IPV4_ADDRESS=$(curl -fsL4 ifconfig.me || echo '')
     IPV6_ADDRESS=$(curl -fsL6 ifconfig.me || echo '')
     if [ ${IPV4_ADDRESS} ]; then
-        IP_ADDRESS=${IPV4_ADDRESS}
+        IP_ADDRESS=${IP_ADDRESS:-"${IPV4_ADDRESS}"}
     else
-        IP_ADDRESS=${IPV6_ADDRESS}
+        IP_ADDRESS=${IP_ADDRESS:-"${IPV6_ADDRESS}"}
     fi
 }
 
@@ -636,7 +636,7 @@ check_variable() {
         error_exit "Sing-box version need >= 1.12"
     fi
     # 检查 ip address
-    if [ ! ${IP_ADDRESS} ]; then
+    if [ ! ${IPV4_ADDRESS} ] && [ ! ${IPV6_ADDRESS} ]; then
         error_exit "Public ip address obtain failed"
     fi
     # 检查 port, 获取 port 之和
