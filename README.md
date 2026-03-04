@@ -103,7 +103,7 @@ services:
 | LABEL               | 节点标签，用于区分不同节点的配置，默认随机            |
 | CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)            |
 | TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(所有服务关闭时开启)  |
-| VLESS_PORT          | Vless 端口，默认 0(关闭)，配置：VLESS-Vision-REALITY  |
+| VLESS_PORT          | Vless 端口，默认 0(关闭)                              |
 | TUIC_PORT           | Tuic 端口，默认 0(关闭)                               |
 | HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                          |
 | HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100                |

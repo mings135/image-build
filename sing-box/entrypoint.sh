@@ -49,8 +49,13 @@ variable_by_env() {
 }
 
 varialbe_by_auto() {
-    ADDRESS_IPV4=$(curl -fsL4 ifconfig.me || echo '')
-    ADDRESS_IPV6=$(curl -fsL6 ifconfig.me || echo '')
+    IPV4_ADDRESS=$(curl -fsL4 ifconfig.me || echo '')
+    IPV6_ADDRESS=$(curl -fsL6 ifconfig.me || echo '')
+    if [ ${IPV4_ADDRESS} ]; then
+        IP_ADDRESS=${IPV4_ADDRESS}
+    else
+        IP_ADDRESS=${IPV6_ADDRESS}
+    fi
 }
 
 compare_version_ge() {
@@ -69,6 +74,13 @@ compare_version_ge() {
     else
         return 1
     fi
+}
+
+error_exit() {
+    echo "$1"
+    echo "60 seconds later exit..."
+    sleep 60
+    exit 1
 }
 
 # ------ server ------
@@ -556,7 +568,7 @@ client_generate_config() {
     if [ ${VLESS_PORT} -ne 0 ]; then
         client_create_vless
         tmp_var=${vless_tag} yq -ioj '.tag = strenv(tmp_var)' ${CLIENT_TMP}
-        tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${IP_ADDRESS} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${VLESS_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${VLESS_FLOW} yq -ioj '.flow = strenv(tmp_var)' ${CLIENT_TMP}
@@ -564,6 +576,7 @@ client_generate_config() {
         tmp_var=${PUBLIC_KEY} yq -ioj '.tls.reality.public_key = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id = strenv(tmp_var)' ${CLIENT_TMP}
         if [ ${VLESS_MODE} -eq 0 ]; then
+            tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
             yq -ioj 'del(.tls.server_name)' ${CLIENT_TMP}
             yq -ioj 'del(.tls.reality)' ${CLIENT_TMP}
         fi
@@ -620,26 +633,32 @@ client_deprecated_changes() {
 check_variable() {
     # 检查 version
     if ! compare_version_ge "${VERSION}" "1.12"; then
-        echo "Sing-box version need >= 1.12"
-        exit 1
+        error_exit "Sing-box version need >= 1.12"
+    fi
+    # 检查 ip address
+    if [ ! ${IP_ADDRESS} ]; then
+        error_exit "Public ip address obtain failed"
+    fi
+    # 检查 port, 获取 port 之和
+    if ! echo "${TROJAN_PORT}${VLESS_PORT}${TUIC_PORT}${HYSTERIA2_PORT}" | grep -Eqi '^[[:digit:]]*$'; then
+        error_exit "Port must be a number"
+    fi
+    local tmp_sum=$((TROJAN_PORT + VLESS_PORT + TUIC_PORT + HYSTERIA2_PORT))
+    # 如果仅开启 vless reality, domain and email will be not used
+    if [ ${tmp_sum} -eq ${VLESS_PORT} ] && [ ${VLESS_MODE} -eq 1 ]; then
+        DOMAIN=${DOMAIN:-"example.com"}
+        EMAIL=${EMAIL:-"user@example.com"}
+        CHECK_DNS=0
     fi
     # 必须配置 domain
     if [ ! "${DOMAIN}" ]; then
-        echo "DOMAIN environment variables must be set"
-        exit 1
+        error_exit "DOMAIN variable must be set"
     fi
     # 必须配置 email
     if [ ! "${EMAIL}" ]; then
-        echo "EMAIL environment variables must be set"
-        exit 1
-    fi
-    # 检查 port
-    if ! echo "${TROJAN_PORT}${VLESS_PORT}${TUIC_PORT}${HYSTERIA2_PORT}" | grep -Eqi '^[[:digit:]]*$'; then
-        echo "Port must be a number"
-        exit 1
+        error_exit "EMAIL variable must be set"
     fi
     # 如果未设置 port，默认开启 trojan，端口 443
-    local tmp_sum=$((TROJAN_PORT + VLESS_PORT + TUIC_PORT + HYSTERIA2_PORT))
     if [ ${tmp_sum} -eq 0 ]; then
         TROJAN_PORT=443
     fi
@@ -649,10 +668,10 @@ check_one_domain() {
     local tmp_domain="$1"
 
     while true; do
-        if [ ${ADDRESS_IPV4} ] && dig A ${tmp_domain} +short | grep -Eqi "${ADDRESS_IPV4}"; then
+        if [ ${IPV4_ADDRESS} ] && dig A ${tmp_domain} +short | grep -Eqi "${IPV4_ADDRESS}"; then
             break
         fi
-        if [ ${ADDRESS_IPV6} ] && dig AAAA ${tmp_domain} +short | grep -Eqi "${ADDRESS_IPV6}"; then
+        if [ ${IPV6_ADDRESS} ] && dig AAAA ${tmp_domain} +short | grep -Eqi "${IPV6_ADDRESS}"; then
             break
         fi
         echo "DNS resolution mismatch ${tmp_domain}!"
@@ -661,15 +680,6 @@ check_one_domain() {
 }
 
 check_domain() {
-    while true; do
-        if [ ${ADDRESS_IPV4} ] || [ ${ADDRESS_IPV6} ]; then
-            break
-        else
-            echo "Unable to obtain the local public IP address!"
-            sleep 60
-        fi
-    done
-
     for i in $(echo ${DOMAIN} | awk -F ',' '{for(i=1;i<=NF;i++){print $i}}')
     do
         check_one_domain "$i"
@@ -730,8 +740,8 @@ main() {
         server_generate_config
         client_generate_config
         client_deprecated_changes
-        echo "Network ipv4 address: ${ADDRESS_IPV4}"
-        echo "Network ipv6 address: ${ADDRESS_IPV6}"
+        echo "Network ipv4 address: ${IPV4_ADDRESS}"
+        echo "Network ipv6 address: ${IPV6_ADDRESS}"
         echo "Secret username: ${USERNAME}"
         echo "Secret password: ${PASSWORD}"
         echo "Secret uuid: ${UUID}"
