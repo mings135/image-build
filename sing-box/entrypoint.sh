@@ -23,7 +23,7 @@ variable_by_env() {
     PUBLIC_KEY=${PUBLIC_KEY:-"${tmp_public}"}
     PRIVATE_KEY=${PRIVATE_KEY:-"${tmp_private}"}
     SHORT_ID=${SHORT_ID:-"$(sing-box generate rand 8 --hex)"}
-    REALITY_DOMAIN=${REALITY_DOMAIN:-"artifacthub.io"}
+    REALITY_DOMAIN=${REALITY_DOMAIN:-"www.microsoft.com"}
     # 通用配置
     USERNAME=${USERNAME:-"$(pwgen 4 1 -s -0)"}
     PASSWORD=${PASSWORD:-"$(pwgen 16 1 -s)"}
@@ -235,12 +235,12 @@ server_generate_config() {
             yq -ioj 'del(.tls.reality)' ${SERVER_TMP}
             yq -ioj '.tls.alpn = ["h2", "http/1.1"]' ${SERVER_TMP}
             yq -ioj '.tls.acme.domain = []' ${SERVER_TMP}
-            yq -ioj '.tls.acme.provider = "letsencrypt"' ${SERVER_TMP}
             for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
             do
                 tmp_var=${i} yq -ioj '.tls.acme.domain += strenv(tmp_var)' ${SERVER_TMP}
             done
             tmp_var=${EMAIL} yq -ioj '.tls.acme.email = strenv(tmp_var)' ${SERVER_TMP}
+            yq -ioj '.tls.acme.provider = "letsencrypt"' ${SERVER_TMP}
         fi
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
