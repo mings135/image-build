@@ -301,6 +301,7 @@ client_create_trojan() {
   "password": "",
   "tls": {
     "enabled": true,
+    "server_name": "",
     "utls": {
       "enabled": true,
       "fingerprint": "chrome"
@@ -352,6 +353,7 @@ client_create_tuic() {
   "congestion_control": "bbr",
   "tls": {
     "enabled": true,
+    "server_name": "",
     "alpn": ["h3"]
   }
 }
@@ -370,6 +372,7 @@ client_create_hysteria2() {
   "password": "",
   "tls": {
     "enabled": true,
+    "server_name": "",
     "alpn": ["h3"]
   }
 }
@@ -558,6 +561,7 @@ client_generate_config() {
         tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${TROJAN_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
         tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${trojan_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
@@ -577,7 +581,7 @@ client_generate_config() {
         tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id = strenv(tmp_var)' ${CLIENT_TMP}
         if [ ${VLESS_MODE} -eq 0 ]; then
             tmp_var=${first_domain} yq -ioj '.server = strenv(tmp_var)' ${CLIENT_TMP}
-            yq -ioj 'del(.tls.server_name)' ${CLIENT_TMP}
+            tmp_var=${first_domain} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
             yq -ioj 'del(.tls.reality)' ${CLIENT_TMP}
         fi
         # client config change
@@ -594,6 +598,7 @@ client_generate_config() {
         tmp_var=${TUIC_PORT} yq -ioj '.server_port = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${UUID} yq -ioj '.uuid = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
         tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${tuic_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
@@ -609,6 +614,7 @@ client_generate_config() {
         tmp_var=${HYSTERIA_UP_SPEED} yq -ioj '.up_mbps = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${HYSTERIA_DOWN_SPEED} yq -ioj '.down_mbps = env(tmp_var)' ${CLIENT_TMP}
         tmp_var=${PASSWORD} yq -ioj '.password = strenv(tmp_var)' ${CLIENT_TMP}
+        tmp_var=${first_domain} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
         # client config change
         tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${hysteria2_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
