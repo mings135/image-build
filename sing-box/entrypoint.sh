@@ -23,25 +23,26 @@ variable_by_env() {
     PUBLIC_KEY=${PUBLIC_KEY:-"${tmp_public}"}
     PRIVATE_KEY=${PRIVATE_KEY:-"${tmp_private}"}
     SHORT_ID=${SHORT_ID:-"$(sing-box generate rand 8 --hex)"}
-    REALITY_DOMAIN=${REALITY_DOMAIN:-"www.microsoft.com"}
-    # 获取变量, 否则自动生成
+    REALITY_DOMAIN=${REALITY_DOMAIN:-"artifacthub.io"}
+    # 通用配置
     USERNAME=${USERNAME:-"$(pwgen 4 1 -s -0)"}
     PASSWORD=${PASSWORD:-"$(pwgen 16 1 -s)"}
     UUID=${UUID:-"$(sing-box generate uuid)"}
     LEVEL=${LEVEL:-"warn"}
     LABEL=${LABEL:-"$(pwgen 4 1 -s -0 -A)"}
-    # 获取变量, 否则默认为 0, 表示不开启
+    # 协议端口, 默认为 0, 表示不开启
     TROJAN_PORT=${TROJAN_PORT:-"0"}
     VLESS_PORT=${VLESS_PORT:-"0"}
     TUIC_PORT=${TUIC_PORT:-"0"}
     HYSTERIA2_PORT=${HYSTERIA2_PORT:-"0"}
-    # 额外配置
+    # 额外配置，vless mode: 0=tls, 1=reality
+    VLESS_MODE=${VLESS_MODE:-"0"}
     HYSTERIA_UP_SPEED=${HYSTERIA_UP_SPEED:-"100"}
     HYSTERIA_DOWN_SPEED=${HYSTERIA_DOWN_SPEED:-"100"}
     # 客户端配置
     CLIENT_CLASH_PORT=${CLIENT_CLASH_PORT:-"9090"}
     CLIENT_CLASH_UI=${CLIENT_CLASH_UI:-"ui"}
-    # 检查
+    # 检查 DNS
     CHECK_DNS=${CHECK_DNS:-"1"}
     # Upload client.json
     SUB_UPLOAD_LEVEL=${SUB_UPLOAD_LEVEL:-"1"}
@@ -229,6 +230,18 @@ server_generate_config() {
         tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.reality.handshake.server = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${PRIVATE_KEY} yq -ioj '.tls.reality.private_key = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id += strenv(tmp_var)' ${SERVER_TMP}
+        if [ ${VLESS_MODE} -eq 0 ]; then
+            yq -ioj 'del(.tls.server_name)' ${SERVER_TMP}
+            yq -ioj 'del(.tls.reality)' ${SERVER_TMP}
+            yq -ioj '.tls.alpn = ["h2", "http/1.1"]' ${SERVER_TMP}
+            yq -ioj '.tls.acme.domain = []' ${SERVER_TMP}
+            yq -ioj '.tls.acme.provider = "letsencrypt"' ${SERVER_TMP}
+            for i in $(echo "${DOMAIN}" | awk -F ',' '{for(i=1;i<=NF;i++) print $i}')
+            do
+                tmp_var=${i} yq -ioj '.tls.acme.domain += strenv(tmp_var)' ${SERVER_TMP}
+            done
+            tmp_var=${EMAIL} yq -ioj '.tls.acme.email = strenv(tmp_var)' ${SERVER_TMP}
+        fi
         # server config change
         tmp_var=${SERVER_TMP} yq -ioj '.inbounds += load(strenv(tmp_var))' ${SERVER_FILE}
     fi
@@ -550,6 +563,10 @@ client_generate_config() {
         tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.server_name = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${PUBLIC_KEY} yq -ioj '.tls.reality.public_key = strenv(tmp_var)' ${CLIENT_TMP}
         tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id = strenv(tmp_var)' ${CLIENT_TMP}
+        if [ ${VLESS_MODE} -eq 0 ]; then
+            yq -ioj 'del(.tls.server_name)' ${CLIENT_TMP}
+            yq -ioj 'del(.tls.reality)' ${CLIENT_TMP}
+        fi
         # client config change
         tmp_var=${CLIENT_TMP} yq -ioj '.outbounds += load(strenv(tmp_var))' ${CLIENT_FILE}
         tmp_key=${proxy_index} tmp_var=${vless_tag} yq -ioj '.outbounds[env(tmp_key)].outbounds += strenv(tmp_var)' ${CLIENT_FILE}
