@@ -24,6 +24,7 @@ variable_by_env() {
     PRIVATE_KEY=${PRIVATE_KEY:-"${tmp_private}"}
     SHORT_ID=${SHORT_ID:-"$(sing-box generate rand 8 --hex)"}
     REALITY_DOMAIN=${REALITY_DOMAIN:-"www.microsoft.com"}
+    REALITY_SERVER=${REALITY_SERVER:-"${REALITY_DOMAIN}"}
     # 通用配置
     USERNAME=${USERNAME:-"$(pwgen 4 1 -s -0)"}
     PASSWORD=${PASSWORD:-"$(pwgen 16 1 -s)"}
@@ -239,7 +240,7 @@ server_generate_config() {
         tmp_var=${UUID} yq -ioj '.users[0].uuid = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${VLESS_FLOW} yq -ioj '.users[0].flow = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.server_name = strenv(tmp_var)' ${SERVER_TMP}
-        tmp_var=${REALITY_DOMAIN} yq -ioj '.tls.reality.handshake.server = strenv(tmp_var)' ${SERVER_TMP}
+        tmp_var=${REALITY_SERVER} yq -ioj '.tls.reality.handshake.server = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${PRIVATE_KEY} yq -ioj '.tls.reality.private_key = strenv(tmp_var)' ${SERVER_TMP}
         tmp_var=${SHORT_ID} yq -ioj '.tls.reality.short_id += strenv(tmp_var)' ${SERVER_TMP}
         if [ ${VLESS_MODE} -eq 0 ]; then
