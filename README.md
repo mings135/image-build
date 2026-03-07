@@ -69,8 +69,6 @@ bash debian12-docker.sh && rm debian12-docker.sh
 **构建 sing-box image**
 
 - 自动更新，源码来源：https://github.com/SagerNet/sing-box
-- Vless（REALITY）、Tuic、Hysteria2 （UDP）不支持 nginx-proxy 代理
-
 - docker-compose.yaml
 
 ```yaml
@@ -94,16 +92,16 @@ services:
 
 | **Parameter**       | **Description**                                       |
 | ------------------- | ----------------------------------------------------- |
-| DOMAIN              | 域名（必须）                                          |
-| EMAIL               | 用于申请证书（必须）                                  |
-| USERNAME            | 用户名，默认随机（重启重置）                          |
-| PASSWORD            | 密码，默认随机（重启重置）                            |
-| UUID                | uuid，默认随机（重启重置）                            |
-| LEVEL               | 日志级别，默认 warn                                   |
-| LABEL               | 节点标签，用于区分不同节点的配置，默认随机            |
-| CHECK_DNS           | 运行 Server 前，检查域名解析，默认 1(开启)            |
+| DOMAIN              | 域名（必须，仅使用 vless reality 时可以忽略）         |
+| EMAIL               | 自动申请证书（必须，仅使用 vless reality 时可以忽略） |
+| USERNAME            | 用户名（通用），默认随机，重启重置                    |
+| PASSWORD            | 密码（通用），默认随机，重启重置                      |
+| UUID                | uuid（通用），默认随机，重启重置                      |
+| LABEL               | 节点标签，默认随机，重启重置                          |
+| CHECK_DNS           | 运行 Service 前，检查域名解析，默认 1(开启)，关闭 0   |
 | TROJAN_PORT         | Trojan 端口，默认 0(关闭) or 443(所有服务关闭时开启)  |
 | VLESS_PORT          | Vless 端口，默认 0(关闭)                              |
+| VLESS_MODE          | Vless 模式，默认 0=Vision-TLS，1=Vision-Reality       |
 | TUIC_PORT           | Tuic 端口，默认 0(关闭)                               |
 | HYSTERIA2_PORT      | Hysteria2 端口，默认 0(关闭)                          |
 | HYSTERIA_UP_SPEED   | Hysteria2 上传端口速率(Mbps)，默认 100                |
@@ -120,10 +118,11 @@ services:
 
 ```shell
 # 查看账密等信息（如果没有设置相应的变量，重启后会重置）
-docker compose logs | grep -Ei 'network|secret'
+docker compose logs | grep Secret
 
-# 查看 sing-box client.json config
+# 查看 sing-box client.json config.json
 docker compose exec sing-box yq -oj /etc/sing-box/client.json
+docker compose exec sing-box yq -oj /etc/sing-box/config.json
 
 # 查看 sing-box client.json config about outbounds
 docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client.json
@@ -136,7 +135,7 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 - 同一目录下包含：sing-box.exe、client.json、sing-box.bat
 - sing-box.exe 官方获取，client.json 使用上面命令获取，也可以通过 Subscribe 服务获取
 
-- sing-box.bat 自行创建，内容如下，同时创建 sing-box.bat 的桌面快捷方式，修改快捷方式高级属性，用管理员方式运行，启动直接运行快捷方式即可
+- sing-box.bat 自行创建，内容如下，同时创建 sing-box.bat 的桌面快捷方式，修改快捷方式高级属性，用管理员方式运行，直接运行快捷方式启动
 
  ```bat
  cd /d %~dp0
@@ -149,7 +148,7 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 
 **构建 nginx-proxy image**
 
-- 官方 nginx:*-alpine 修改版，根据域名不同，代理不同的 HTTP 服务(sing-box and web)
+- 官方 nginx:*-alpine 修改版，根据 SNI，代理不同的 TCP 和 HTTP 服务(sing-box and web)
 - docker-compose.yaml
 
 ```yaml

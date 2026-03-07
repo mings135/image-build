@@ -747,16 +747,16 @@ main() {
         server_generate_config
         client_generate_config
         client_deprecated_changes
-        echo "Network ipv4 address: ${IPV4_ADDRESS}"
-        echo "Network ipv6 address: ${IPV6_ADDRESS}"
-        echo "Secret username: ${USERNAME}"
-        echo "Secret password: ${PASSWORD}"
-        echo "Secret uuid: ${UUID}"
-        echo "Secret vless flow: ${VLESS_FLOW}"
-        echo "Secret public key: ${PUBLIC_KEY}"
-        echo "Secret private key: ${PRIVATE_KEY}"
-        echo "Secret short id: ${SHORT_ID}"
-        echo "Secret reality domain: ${REALITY_DOMAIN}"
+        echo "Secret ipv4 address: ${IPV4_ADDRESS}"
+        echo "Secret ipv6 address: ${IPV6_ADDRESS}"
+        echo "Secret USERNAME=${USERNAME}"
+        echo "Secret PASSWORD=${PASSWORD}"
+        echo "Secret UUID=${UUID}"
+        echo "Secret VLESS_FLOW=${VLESS_FLOW}"
+        echo "Secret PUBLIC_KEY=${PUBLIC_KEY}"
+        echo "Secret PRIVATE_KEY=${PRIVATE_KEY}"
+        echo "Secret SHORT_ID=${SHORT_ID}"
+        echo "Secret REALITY_DOMAIN=${REALITY_DOMAIN}"
     fi
 
     if [ -e ${CLIENT_FILE} ] && [ "${SUB_API_TOKEN}" ] && [ "${SUB_API_URL}" ]; then
