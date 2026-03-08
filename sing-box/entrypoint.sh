@@ -632,7 +632,7 @@ client_generate_config() {
 client_deprecated_changes() {
     # Deprecated changes about sing-box v1.13
     if compare_version_ge "${VERSION}" "1.13"; then
-        echo "no changes about sing-box v1.13"
+        yq -ioj '.route.rules = [{"network": "icmp", "action": "reject", "method": "reply"}] + .route.rules' ${CLIENT_FILE}
     fi
 }
 

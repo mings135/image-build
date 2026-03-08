@@ -132,7 +132,7 @@ nginx_http_config() {
     local tmp_protocol="$(echo "$1" | awk -F ',' '{print $1}')"
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
-    local tmp_port=$((10000 + $2))
+    local tmp_port=$((20000 + $2))
     # 依赖上面 tmp_domain 变量
     local tmp_crt=$(eval echo "${CERT_CRT_FILE}")
     local tmp_key=$(eval echo "${CERT_KEY_FILE}")
@@ -263,9 +263,11 @@ main() {
     nginx_basic_config
     nginx_proxy_config
     nginx_config_opt
-    nginx_crontab_script
+
     if [ "${CERT_SOURCE}" = 'certbot' ]; then
-        certbot_crontab_script 
+        certbot_crontab_script
+    else
+        nginx_crontab_script
     fi
 }
 
