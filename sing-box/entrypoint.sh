@@ -752,7 +752,7 @@ main() {
         echo "Secret USERNAME=${USERNAME}"
         echo "Secret PASSWORD=${PASSWORD}"
         echo "Secret UUID=${UUID}"
-        echo "Secret VLESS_FLOW=${VLESS_FLOW}"
+        echo "Secret vless flow=${VLESS_FLOW}"
         echo "Secret PUBLIC_KEY=${PUBLIC_KEY}"
         echo "Secret PRIVATE_KEY=${PRIVATE_KEY}"
         echo "Secret SHORT_ID=${SHORT_ID}"
