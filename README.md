@@ -159,15 +159,15 @@ services:
     restart: always
     ports:
       - 443:443
-      # - 80:80  # certbot 申请证书时会用到
+      # - 80:80  # certbot 申请证书时需要
     environment:
       - PROXY1=app,aa.example.com,10.1.1.10:80
       - PROXY2=http,bb.example.com,10.1.1.20:443
     networks:
       - net
     volumes:
-      - ./certs:/etc/nginx/certs  # 证书使用外部 sing-box
-      # - ./certs:/etc/letsencrypt  # 证书使用内部 certbot
+      - ./certs:/etc/nginx/certs  # 使用外部 sing-box 证书
+      # - ./certs:/etc/letsencrypt  # 使用内部 certbot 证书
 
 networks:
   net:
