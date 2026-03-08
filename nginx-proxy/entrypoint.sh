@@ -35,6 +35,10 @@ variable_by_auto() {
         cert_name='fullchain.pem'
         key_name='privkey.pem'
         cert_prefix="${CERTS_DIR}/live/\${tmp_domain}"
+        if [ ! -e ${CERTBOT_DIR} ]; then
+            mkdir -p ${CERTBOT_DIR}
+        fi
+        ln -s ${CERTBOT_DIR} ${CERTS_DIR}
     fi
 
     CERT_CRT_FILE="${cert_prefix}/${cert_name}"
@@ -261,7 +265,7 @@ main() {
     nginx_config_opt
     nginx_crontab_script
     if [ "${CERT_SOURCE}" = 'certbot' ]; then
-        certbot_crontab_script
+        certbot_crontab_script 
     fi
 }
 
