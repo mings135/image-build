@@ -149,7 +149,7 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 **构建 nginx-proxy image**
 
 - 官方 nginx:*-alpine 修改版，根据 SNI，代理不同的 TCP 和 HTTP 服务(sing-box and web)
-- docker-compose.yaml
+- docker-compose.yaml（version >= `1.29.5-alpine`）
 
 ```yaml
 services:
@@ -159,13 +159,15 @@ services:
     restart: always
     ports:
       - 443:443
+      # - 80:80  # certbot 申请证书时会用到
     environment:
       - PROXY1=app,aa.example.com,10.1.1.10:80
       - PROXY2=http,bb.example.com,10.1.1.20:443
     networks:
       - net
     volumes:
-      - ./certs:/etc/nginx/certs
+      - ./certs:/etc/nginx/certs  # 证书使用外部 sing-box
+      # - ./certs:/etc/letsencrypt  # 证书使用内部 certbot
 
 networks:
   net:
@@ -182,8 +184,9 @@ networks:
 | **Parameter** | **Description**                                              |
 | ------------- | ------------------------------------------------------------ |
 | PROXY1        | 代理条目，格式：type,domain:destination（必须）              |
-| PROXY2~9      | 连续、同上            type: app=4层代理，http=7层代理（需要挂载证书） |
-| CERT_SOURCE   | sing-box(default) or certbot，证书来源（可选）               |
-|               | sing-box: /root/.local/share/certmagic 和 /etc/nginx/certs 挂载到同一目录 |
-|               | certbot: /etc/letsencrypt:/etc/nginx/certs                   |
+| PROXY2~9      | 必须连续；同上    type: app=4层代理，http=7层代理（需要挂载证书） |
+| EMAIL         | CERT_SOURCE=certbot 时必须，用于自动申请证书                 |
+| CERT_SOURCE   | sing-box(default) or certbot，证书来源，certbot 申请证书时需要 80 端口 |
+|               | sing-box: `/root/.local/share/certmagic` 和 `/etc/nginx/certs` 挂载到同一目录 |
+|               | certbot: 需要证书持久化的，挂载出来 `./certs:/etc/letsencrypt` |
 
