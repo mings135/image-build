@@ -41,14 +41,19 @@ variable_by_auto() {
     CERT_KEY_FILE="${cert_prefix}/${key_name}"
 }
 
+error_exit() {
+    echo "$1"
+    echo "60 seconds later exit..."
+    sleep 60
+    exit 1
+}
+
 check_and_init() {
     if [ ! "${PROXY1}" ]; then
-        echo "ERROR: PROXY1 not config!"
-        exit 1
+        error_exit "ERROR: PROXY1 not config!"
     fi
     if [ "${CERT_SOURCE}" = 'certbot' ] && [ ! "${EMAIL}" ]; then
-        echo "ERROR: EMAIL not config!"
-        exit 1
+        error_exit "ERROR: EMAIL not config!"
     fi
     rm -rf ${HTTP_DIR} && mkdir -p ${HTTP_DIR}
     rm -rf ${STREAM_DIR} && mkdir -p ${STREAM_DIR}
@@ -158,7 +163,8 @@ EOF
     sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  web-${tmp_port};" ${CONFIG_FILE}
     # certbot 自动申请证书
     if [ "${CERT_SOURCE}" = "certbot" ] && [ ! -e "${tmp_crt}" ]; then
-        certbot certonly -m ${EMAIL} --agree-tos --standalone -d ${tmp_domain}
+        certbot certonly -m ${EMAIL} --agree-tos --standalone -d ${tmp_domain} || error_exit "ERROR: certbot failed"
+        echo "Domain ${tmp_domain} certbot success"
     fi
 }
 
@@ -209,6 +215,7 @@ nginx_config_opt() {
 nginx_crontab_script() {
     cat >${NGINX_CRONTAB} <<EOF
 #!/bin/sh
+set -e
 
 IS_RELOAD=0
 IS_INIT=0
@@ -237,6 +244,7 @@ EOF
 certbot_crontab_script() {
     cat >${CERTBOT_CRONTAB} <<EOF
 #!/bin/sh
+set -e
 
 certbot renew --deploy-hook "nginx -s reload && date >> /tmp/certbot-renew.log"
 EOF
