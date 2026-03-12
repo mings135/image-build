@@ -5,10 +5,13 @@ ENV GOARCH=$TARGETARCH
 ENV CGO_ENABLED=0
 COPY ./$SRC_DIR /go/src/github.com/sagernet/sing-box
 WORKDIR /go/src/github.com/sagernet/sing-box
-RUN go build -v -trimpath -tags "with_quic with_acme with_utls" \
-    -o /go/bin/sing-box \
-    -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" -s -w -buildid=" \
-    ./cmd/sing-box
+RUN set -ex \
+    && apk add git build-base \
+    && export LDFLAGS_SHARED=$(cat release/LDFLAGS) \
+    && go build -v -trimpath -tags "with_quic with_acme with_utls" \
+        -o /go/bin/sing-box \
+        -ldflags "-X \"github.com/sagernet/sing-box/constant.Version=$VERSION\" $LDFLAGS_SHARED -s -w -buildid=" \
+        ./cmd/sing-box
 
 FROM alpine:3.23.3
 COPY --from=aaa /go/bin/sing-box /usr/bin/sing-box
