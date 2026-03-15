@@ -159,15 +159,15 @@ services:
     restart: always
     ports:
       - 443:443
-      # - 80:80  # certbot 申请证书时需要
+      # - 80:80  # certbot 申请证书时验证需要
     environment:
       - PROXY1=app,aa.example.com,10.1.1.10:80
       - PROXY2=http,bb.example.com,10.1.1.20:443
     networks:
       - net
     volumes:
-      - ./certs:/etc/nginx/certs  # 使用外部 sing-box 证书
-      # - ./certs:/etc/letsencrypt  # 使用内部 certbot 证书
+      - ./certs:/etc/nginx/certs  # 挂载外部 sing-box 证书
+      # - ./certs:/etc/letsencrypt  # certbot 证书持久化
 
 networks:
   net:
@@ -183,8 +183,8 @@ networks:
 
 | **Parameter** | **Description**                                              |
 | ------------- | ------------------------------------------------------------ |
-| PROXY1        | 代理条目，格式：type,domain:destination（必须）              |
-| PROXY2~9      | 必须连续；同上    type: app=4层代理，http=7层代理（需要挂载证书） |
+| PROXY1        | 代理条目，格式：type,domain,destination（必须）              |
+| PROXY2~9      | 必须连续，同上：type=app（4层代理），type=http（7层代理，需要挂载证书） |
 | EMAIL         | CERT_SOURCE=certbot 时必须，用于自动申请证书                 |
 | CERT_SOURCE   | sing-box(default) or certbot，证书来源，certbot 申请证书时需要 80 端口 |
 |               | sing-box: `/root/.local/share/certmagic` 和 `/etc/nginx/certs` 挂载到同一目录 |
