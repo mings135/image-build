@@ -69,7 +69,12 @@ bash debian12-docker.sh && rm debian12-docker.sh
 **构建 sing-box image**
 
 - 自动更新，源码来源：https://github.com/SagerNet/sing-box
-- docker-compose.yaml
+
+
+
+### Install
+
+- docker-compose.yaml（Trojan）
 
 ```yaml
 services:
@@ -78,9 +83,8 @@ services:
     image: mings135/sing-box:latest
     restart: always
     environment:
-      - DOMAIN=example.com
-      - EMAIL=user@gmail.com
-      - PASSWORD=pwd
+      - DOMAIN=a.example.com
+      - EMAIL=u@example.com
     network_mode: "host"
     volumes:
       - ./certs:/root/.local/share/certmagic
@@ -88,7 +92,39 @@ services:
 
 
 
-- Configuration
+- docker-compose.yaml（Vless + Reality）
+
+```dockerfile
+services:
+  sing-box:
+    container_name: sing-box
+    image: mings135/sing-box:latest
+    restart: always
+    environment:
+      - VLESS_PORT=443
+      - VLESS_MODE=1
+    network_mode: "host"
+```
+
+
+
+- Command
+
+```shell
+# 查看账密等信息（如果没有设置相应的变量，重启后会重置）
+docker compose logs | grep Secret
+
+# 查看 sing-box client.json config.json
+docker compose exec sing-box yq -oj /etc/sing-box/client.json
+docker compose exec sing-box yq -oj /etc/sing-box/config.json
+
+# 查看 sing-box client.json config about outbounds
+docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client.json
+```
+
+
+
+### Config
 
 | **Parameter**       | **Description**                                       |
 | ------------------- | ----------------------------------------------------- |
@@ -114,26 +150,12 @@ services:
 
 
 
-**其他相关命令**
+### Client
 
-```shell
-# 查看账密等信息（如果没有设置相应的变量，重启后会重置）
-docker compose logs | grep Secret
+**Windows bat 启动脚本 sing-box.bat**
 
-# 查看 sing-box client.json config.json
-docker compose exec sing-box yq -oj /etc/sing-box/client.json
-docker compose exec sing-box yq -oj /etc/sing-box/config.json
-
-# 查看 sing-box client.json config about outbounds
-docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/sing-box/client.json
-```
-
-
-
-**Windows bat  启动脚本 sing-box.bat**
-
-- 同一目录下包含：sing-box.exe、client.json、sing-box.bat
-- sing-box.exe 官方获取，client.json 使用上面命令获取，也可以通过 Subscribe 服务获取
+- Windows 同一目录下包含：sing-box.exe、client.json、sing-box.bat
+- sing-box.exe 官方获取，client.json 使用命令获取，也可以通过 Subscribe 服务获取
 
 - sing-box.bat 自行创建，内容如下，同时创建 sing-box.bat 的桌面快捷方式，修改快捷方式高级属性，用管理员方式运行，直接运行快捷方式启动
 
@@ -148,7 +170,10 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 
 **构建 nginx-proxy image**
 
-- 官方 nginx:*-alpine 修改版，根据 SNI，代理不同的 TCP 和 HTTP 服务(sing-box and web)
+- 官方 nginx:*-alpine 修改版
+
+- 代理 https 流量，根据 SNI，代理不同的 TCP 和 HTTP 服务(sing-box and web)
+
 - docker-compose.yaml（version >= `1.29.5-alpine`）
 
 ```yaml
@@ -159,15 +184,31 @@ services:
     restart: always
     ports:
       - 443:443
-      # - 80:80  # certbot 申请证书时验证需要
     environment:
-      - PROXY1=app,aa.example.com,10.1.1.10:80
-      - PROXY2=http,bb.example.com,10.1.1.20:443
+      - PROXY1=app,a.example.com,10.6.6.10:443
+      - PROXY2=http,b.example.com,10.6.6.20:80
     networks:
       - net
     volumes:
-      - ./certs:/etc/nginx/certs  # 挂载外部 sing-box 证书
-      # - ./certs:/etc/letsencrypt  # certbot 证书持久化
+      - ./certs:/etc/nginx/certs:ro
+  
+  sing-box:
+    container_name: sing-box
+    image: mings135/sing-box:latest
+    restart: always
+    ports:
+      - 80:80
+    environment:
+      - DOMAIN=a.example.com,b.example.com
+      - EMAIL=u@example.com
+    networks:
+      net:
+        ipv4_address: 10.6.6.10
+    volumes:
+      - ./certs:/root/.local/share/certmagic
+
+  web:
+    b.example.com config ...
 
 networks:
   net:
@@ -189,4 +230,79 @@ networks:
 | CERT_SOURCE   | sing-box(default) or certbot，证书来源，certbot 申请证书时需要 80 端口 |
 |               | sing-box: `/root/.local/share/certmagic` 和 `/etc/nginx/certs` 挂载到同一目录 |
 |               | certbot: 需要证书持久化的，挂载出来 `./certs:/etc/letsencrypt` |
+
+
+
+## Nginx-http
+
+**构建 nginx-http image**
+
+- 官方 nginx:*-alpine 修改版
+
+- 代理 http 服务，用于后端 certbot 这类临时验证服务
+- docker-compose.yaml
+
+```yaml
+services:
+  nginx:
+    container_name: nginx
+    image: mings135/nginx-proxy:latest
+    restart: always
+    ports:
+      - 443:443
+    environment:
+      - PROXY1=app,a.example.com,10.6.6.10:443
+      - PROXY2=http,b.example.com,10.6.6.20:80
+      - CERT_SOURCE=certbot
+      - EMAIL=u@example.com
+    networks:
+      net:
+        ipv4_address: 10.6.6.6
+    volumes:
+      - ./certs-nginx:/etc/nginx/certs
+
+  nginx-http:
+    container_name: nginx-http
+    image: mings135/nginx-http:latest
+    restart: always
+    ports:
+      - 80:80
+    environment:
+      - PROXY1=a.example.com,10.6.6.10
+      - PROXY2=b.example.com,10.6.6.6
+    networks:
+      - net
+  
+  sing-box:
+    container_name: sing-box
+    image: mings135/sing-box:latest
+    restart: always
+    environment:
+      - DOMAIN=a.example.com
+      - EMAIL=u@example.com
+    networks:
+      net:
+        ipv4_address: 10.6.6.10
+    volumes:
+      - ./certs:/root/.local/share/certmagic
+
+  web:
+    b.example.com config ...
+
+networks:
+  net:
+    ipam:
+      driver: default
+      config:
+        - subnet: "10.6.6.0/24"
+```
+
+
+
+- Configuration
+
+| **Parameter** | **Description**                            |
+| ------------- | ------------------------------------------ |
+| PROXY1        | 代理条目，格式：domain,destination（必须） |
+| PROXY2~9      | 必须连续，同上                             |
 

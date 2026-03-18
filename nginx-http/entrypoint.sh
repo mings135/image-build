@@ -58,7 +58,7 @@ server {
     listen 80 default_server;
     server_name _;
     server_tokens off;
-    return 403 "Forbidden: Domain not configured.";
+    return 444;
 }
 EOF
 
