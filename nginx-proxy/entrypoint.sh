@@ -1,8 +1,8 @@
 #!/bin/sh
 set -e
 
-# PROXY1=http,web.mqgo.top,1.1.1.1:80
-# PROXY2=app,app.mqgo.top,2.2.2.2:443
+# PROXY1=http,web.example.com,1.1.1.1:80
+# PROXY2=app,app.example.com,2.2.2.2:443
 
 # CERT_SOURCE=sing-box volume(default): ./certs:/root/.local/share/certmagic(sing-box) and ./certs:/etc/nginx/certs(nginx-proxy)
 # CERT_SOURCE=certbot(Need EMAIL) volume: ./certs:/etc/letsencrypt
@@ -94,6 +94,7 @@ http {
 
     #gzip  on;
 
+    server_tokens off;
     client_max_body_size 10m;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $proxy_protocol_addr;

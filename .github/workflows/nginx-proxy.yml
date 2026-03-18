@@ -10,7 +10,7 @@ on:
         description: "The tag version you want to build"
         required: true
         type: string
-        default: "nginx-proxy/1.29.5-alpine"
+        default: "nginx-proxy/1.29.6-alpine"
 
 jobs:
   build:
@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Variables
         id: myval

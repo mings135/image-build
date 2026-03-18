@@ -1,16 +1,16 @@
-name: sing-box
+name: nginx-http
 
 on:
   push:
     tags:
-      - sing-box/v*
+      - nginx-http/*-alpine
   workflow_dispatch:
     inputs:
       tag:
         description: "The tag version you want to build"
         required: true
         type: string
-        default: "sing-box/v1.13.2"
+        default: "nginx-http/1.29.6-alpine"
 
 jobs:
   build:
@@ -35,10 +35,9 @@ jobs:
           echo "build_name=${tmp_name}" >> $GITHUB_OUTPUT
           echo "build_version=${tmp_version}" >> $GITHUB_OUTPUT
 
-      - name: Clone Repo
-        working-directory: ${{ steps.myval.outputs.build_name }}
+      - name: Change Dockerfile
         run: |
-          git clone --depth=1 -b ${{ steps.myval.outputs.build_version }} https://github.com/SagerNet/sing-box.git ${{ steps.myval.outputs.build_name }}
+          sed -i "s/FROM nginx.*alpine/FROM nginx:${{ steps.myval.outputs.build_version }}/" ./nginx-proxy/Dockerfile
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -55,7 +54,6 @@ jobs:
           context: ./${{ steps.myval.outputs.build_name }}
           build-args: |
             VERSION=${{ steps.myval.outputs.build_version }}
-            SRC_DIR=${{ steps.myval.outputs.build_name }}
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
