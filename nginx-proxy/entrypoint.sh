@@ -176,10 +176,10 @@ EOF
 nginx_stream_config() {
     local tmp_domain="$(echo "$1" | awk -F ',' '{print $2}')"
     local tmp_dest="$(echo "$1" | awk -F ',' '{print $3}')"
-    local tmp_port=$((10000 + $2))
+    local tmp_port=$((20000 + $2))
 
     cat >${STREAM_DIR}/${tmp_domain}.conf <<EOF
-upstream mid-${tmp_port} {
+upstream app-${tmp_port} {
     server 127.0.0.1:${tmp_port};
 }
 
@@ -193,7 +193,7 @@ server {
 }
 EOF
 
-    sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  mid-${tmp_port};" ${CONFIG_FILE}
+    sed -i "/ssl_preread_server_name/a \        ${tmp_domain}  app-${tmp_port};" ${CONFIG_FILE}
 }
 
 nginx_proxy_config() {
@@ -204,8 +204,10 @@ nginx_proxy_config() {
         if [ "${tmp_proxy}" ]; then
             if [[ "${tmp_proxy}" =~ "^https?," ]]; then
                 nginx_http_config "${tmp_proxy}" $i
-            else
+            elif [[ "${tmp_proxy}" =~ "^app," ]]; then
                 nginx_stream_config "${tmp_proxy}" $i
+            else
+                error_exit "ERROR: invalid proxy config: ${tmp_proxy}"
             fi
         else
             break
