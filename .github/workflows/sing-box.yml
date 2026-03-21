@@ -8,9 +8,11 @@ on:
         required: true
         type: string
         default: "v1.13.2"
-
-env:
-  APP_NAME: sing-box
+      app_name:
+        description: "The app name you want to build"
+        required: true
+        type: string
+        default: "sing-box"
 
 jobs:
   build:
@@ -21,11 +23,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Clone Repo
-        working-directory: ${{ env.APP_NAME }}
+        working-directory: ${{ github.event.inputs.app_name }}
         run: |
-          git clone --depth=1 -b ${{ inputs.tag_name }} https://github.com/SagerNet/sing-box.git src
-          echo "tag_name: ${{ inputs.tag_name }}"
-          echo "app_name: ${{ env.APP_NAME }}"
+          git clone --depth=1 -b ${{ github.event.inputs.tag_name }} https://github.com/SagerNet/sing-box.git src
+          echo "tag_name: ${{ github.event.inputs.tag_name }}"
+          echo "app_name: ${{ github.event.inputs.app_name }}"
 
       # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v4
@@ -42,12 +44,30 @@ jobs:
       # - name: Build and Push
       #   uses: docker/build-push-action@v7
       #   with:
-      #     context: ./${{ env.APP_NAME }}
+      #     context: ./${{ github.event.inputs.app_name }}
       #     build-args: |
-      #       VERSION=${{ inputs.tag_name }}
+      #       VERSION=${{ github.event.inputs.tag_name }}
       #       SRC_DIR=src
       #     platforms: linux/amd64,linux/arm64
       #     push: true
       #     tags: |
-      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.APP_NAME }}:${{ inputs.tag_name }}
-      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.APP_NAME }}:latest
+      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ github.event.inputs.app_name }}:${{ github.event.inputs.tag_name }}
+      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ github.event.inputs.app_name }}:latest
+
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          RELEASE_TAG: "${{ github.event.inputs.app_name }}:${{ github.event.inputs.tag_name }}"
+          RELEASE_TITLE: "${{ github.event.inputs.app_name }}:${{ github.event.inputs.tag_name }}"
+          RELEASE_NOTES: "Build from ${{ github.event.inputs.tag_name }}"
+        run: |
+          echo "--- 正在处理 Release $RELEASE_TAG ---"    
+          # 检查 Release 是否已经存在
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Release 已存在，跳过..."
+          else
+            echo "创建新 Release..."
+            gh release create "$RELEASE_TAG" \
+              --title "$RELEASE_TITLE" \
+              --notes "$RELEASE_NOTES"
+          fi
