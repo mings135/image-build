@@ -31,7 +31,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
           gh workflow run "${{ matrix.name }}.yml" \
-            -f tag_name=${{ env.release_tag }}
+            -f tag_name=${{ env.release_tag }} \
             -f app_name=${{ matrix.name }}
       
   clean:
