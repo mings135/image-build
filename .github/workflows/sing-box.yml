@@ -8,7 +8,7 @@ on:
         required: true
         type: string
         default: "v1.13.2"
-      project_name:
+      app_name:
         description: "The project name you want to build"
         required: true
         default: 'sing-box'
@@ -19,7 +19,7 @@ on:
           - nginx-http
 
 env:
-  PROJECT_NAME: ${{ github.event.inputs.project_name }}
+  APP_NAME: ${{ github.event.inputs.app_name }}
   TAG_NAME: ${{ github.event.inputs.tag_name }}
 
 jobs:
@@ -31,11 +31,11 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Clone Repo
-        working-directory: ${{ env.PROJECT_NAME }}
+        working-directory: ${{ env.APP_NAME }}
         run: |
           git clone --depth=1 -b ${{ env.TAG_NAME}} https://github.com/SagerNet/sing-box.git src
           echo "tag_name: ${{ env.TAG_NAME }}"
-          echo "app_name: ${{ env.PROJECT_NAME }}"
+          echo "app_name: ${{ env.APP_NAME }}"
 
       # - name: Set up QEMU
       #   uses: docker/setup-qemu-action@v4
@@ -52,22 +52,22 @@ jobs:
       # - name: Build and Push
       #   uses: docker/build-push-action@v7
       #   with:
-      #     context: ./${{ env.PROJECT_NAME }}
+      #     context: ./${{ env.APP_NAME }}
       #     build-args: |
       #       VERSION=${{ env.TAG_NAME }}
       #       SRC_DIR=src
       #     platforms: linux/amd64,linux/arm64
       #     push: true
       #     tags: |
-      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.PROJECT_NAME }}:${{ env.TAG_NAME }}
-      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.PROJECT_NAME }}:latest
+      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.APP_NAME }}:${{ env.TAG_NAME }}
+      #       ${{ secrets.DOCKERHUB_REGISTRY }}/${{ env.APP_NAME }}:latest
 
       - name: Create Release
         env:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
-          RELEASE_TAG: ${{ env.PROJECT_NAME }}/${{ env.TAG_NAME}}
-          RELEASE_TITLE: ${{ env.PROJECT_NAME }}/${{ env.TAG_NAME}}
-          RELEASE_NOTES: "Build from ${{ env.PROJECT_NAME }} ${{ env.TAG_NAME }}"
+          RELEASE_TAG: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
+          RELEASE_TITLE: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
+          RELEASE_NOTES: "Build from ${{ env.APP_NAME }} ${{ env.TAG_NAME }}"
         run: |
           echo "--- 正在处理 Release $RELEASE_TAG ---"    
           # 检查 Release 是否已经存在
