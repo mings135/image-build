@@ -1,0 +1,78 @@
+name: auto-trigger
+
+on:
+  schedule:
+    - cron: "20 20 * * *"
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - name: sing-box
+            dirctory: sing-box
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check build
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        run: |
+          bash ${{ matrix.dirctory }}/auto.sh
+      
+      - name: Trigger Workflow
+        if: env.release_new == 'yes'
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+        run: |
+          gh workflow run "${{ matrix.name }}.yml" \
+            -f tag_name=${{ env.release_tag }}
+      
+  clean:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Clean releases and workflows
+        env:
+          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          KEEP_RELEASES: 9
+          KEEP_WORKFLOWS: 12
+        run: |
+          REL_SKIP=$((KEEP_RELEASES + 1))
+          RUN_SKIP=$((KEEP_WORKFLOWS + 1))
+
+          echo "--- 正在清理旧的 Release 和 Tag ---"
+          # 使用 --json 确保 Tag 100% 准确，保留最新的几个(排除 latest)
+          RELEASES=$(gh release list --limit 100 --json tagName,isLatest \
+            | jq -r '.[] | select(.isLatest == false) | .tagName' \
+            | tail -n +"$REL_SKIP") 
+          
+          if [ -n "$RELEASES" ]; then
+            echo "发现待删除 Release:
+          $RELEASES"
+            echo "$RELEASES" | xargs -r -I % -n 1 gh release delete % --yes --cleanup-tag
+          else
+            echo "✅ 没有需要删除的 Release"
+          fi
+
+          echo "--- 正在清理旧的 Workflow 运行记录 ---"
+          RUN_IDS=$(gh run list --limit 100 --status completed --json databaseId \
+            | jq -r '.[].databaseId' \
+            | tail -n +"$RUN_SKIP")
+          
+          if [ -n "$RUN_IDS" ]; then
+            echo "发现待删除运行记录 ID: 
+          $RUN_IDS"
+            echo "$RUN_IDS" | xargs -r -I % -n 1 gh run delete %
+          else
+            echo "✅ 没有需要删除的运行记录"
+          fi

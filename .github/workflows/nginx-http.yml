@@ -59,10 +59,3 @@ jobs:
           tags: |
             ${{ steps.myval.outputs.tag_version }}
             ${{ steps.myval.outputs.tag_latest }}
-
-      - name: Delete Workflow
-        uses: Mattraks/delete-workflow-runs@v2
-        with:
-          token: ${{ secrets.MY_TOKEN }}
-          retain_days: 1
-          keep_minimum_runs: 3
