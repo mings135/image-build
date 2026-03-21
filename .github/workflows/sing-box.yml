@@ -15,8 +15,8 @@ on:
         type: choice
         options:
           - sing-box
-          - nginx-proxy
-          - nginx-http
+          # - nginx-proxy
+          # - nginx-http
 
 env:
   APP_NAME: ${{ github.event.inputs.app_name }}
@@ -32,7 +32,6 @@ jobs:
 
       - name: Clone Repo
         working-directory: ${{ env.APP_NAME }}
-        if: env.APP_NAME == 'sing-box'
         run: |
           git clone --depth=1 -b ${{ env.TAG_NAME}} https://github.com/SagerNet/sing-box.git src
 
@@ -66,7 +65,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
           RELEASE_TAG: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_TITLE: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
-          RELEASE_NOTES: "Build from ${{ env.APP_NAME }} ${{ env.TAG_NAME }}"
+          RELEASE_NOTES: "Build from ${{ env.APP_NAME }}:${{ env.TAG_NAME }}"
         run: |
           echo "--- 正在处理 Release $RELEASE_TAG ---"    
           # 检查 Release 是否已经存在
