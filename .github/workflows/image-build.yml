@@ -42,11 +42,10 @@ jobs:
             "sing-box")
               echo "Clone sing-box..."
               git clone --depth=1 -b ${TAG_NAME} https://github.com/SagerNet/sing-box.git src
-              ls src
               ;;
             nginx-*)
               if [ -f "./Dockerfile" ]; then
-                echo "Change Dockerfile..."
+                echo "Modify Dockerfile..."
                 sed -i "s@FROM nginx.*alpine@FROM nginx:${TAG_NAME}@" ./Dockerfile
                 cat ./Dockerfile | grep "FROM nginx"
               else
