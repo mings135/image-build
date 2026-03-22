@@ -118,7 +118,7 @@ jobs:
           echo "--- 正在清理旧的 Release 和 Tag ---"
           RELEASES=$(gh release list --limit 100 \
             --exclude-drafts --json tagName,isLatest \
-            --jq "[.[] | select(.isLatest == false)] | .[${KEEP_RELEASES}:].[] | .tagName")
+            --jq "[.[] | select(.isLatest == false and (.tagName | startswith(\"$APP_NAME\")))] | .[${KEEP_RELEASES}:].[] | .tagName")
           
           if [ -n "$RELEASES" ]; then
             echo "发现待删除 Release:
