@@ -5,9 +5,9 @@ TAG_NAME=$(gh release list --repo SagerNet/sing-box --exclude-pre-releases --lim
 
 if gh release view "${APP_NAME}/${TAG_NAME}" >/dev/null 2>&1; then
   echo "版本已存在: $TAG_NAME"
-  echo "RELEASE_NEW=no" >> $GITHUB_ENV
+  echo "SHOULD_RELEASE=no" >> $GITHUB_ENV
 else
   echo "发现新版本: $TAG_NAME"
-  echo "RELEASE_NEW=yes" >> $GITHUB_ENV
-  echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
+  echo "SHOULD_RELEASE=yes" >> $GITHUB_ENV
+  echo "TAG_NAME=$TAG_NAME" >> $GITHUB_ENV
 fi

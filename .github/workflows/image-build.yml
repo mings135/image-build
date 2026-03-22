@@ -18,9 +18,12 @@ on:
           - nginx-proxy
           - nginx-http
 
+permissions:
+  contents: read
+
 env:
-  APP_NAME: ${{ github.event.inputs.app_name }}
-  TAG_NAME: ${{ github.event.inputs.tag_name }}
+  APP_NAME: ${{ inputs.app_name }}
+  TAG_NAME: ${{ inputs.tag_name }}
 
 jobs:
   build:
@@ -84,7 +87,7 @@ jobs:
 
       - name: Create Release
         env:
-          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_TITLE: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_NOTES: "Build from ${{ env.APP_NAME }}:${{ env.TAG_NAME }}"
@@ -110,7 +113,7 @@ jobs:
 
       - name: Clean Releases by APP
         env:
-          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEP_RELEASES: 3
         run: |
           REL_SKIP=$((KEEP_RELEASES + 1))

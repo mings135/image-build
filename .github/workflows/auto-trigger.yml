@@ -5,6 +5,9 @@ on:
     - cron: "20 20 * * *"
   workflow_dispatch:
 
+permissions:
+  actions: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -16,6 +19,8 @@ jobs:
     
     env:
       APP_NAME: ${{ matrix.name }}
+      SHOULD_RELEASE: no
+      TAG_NAME: ""
 
     steps:
       - name: Checkout
@@ -23,18 +28,23 @@ jobs:
 
       - name: Check Release
         env:
-          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           bash "${APP_NAME}/auto.sh"
       
       - name: Trigger Workflow
-        if: env.RELEASE_NEW == 'yes'
+        if: env.SHOULD_RELEASE == 'yes'
         env:
-          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh workflow run image-build.yml --ref main \
-            -f tag_name="$RELEASE_TAG" \
-            -f app_name="$APP_NAME"
+          if [ -n "$TAG_NAME" ]; then
+            gh workflow run image-build.yml --ref main \
+              -f tag_name="$TAG_NAME" \
+              -f app_name="$APP_NAME"
+          else
+            echo "❌ 没有找到 tag_name"
+            exit 1
+          fi
       
   clean:
     runs-on: ubuntu-latest
@@ -46,7 +56,7 @@ jobs:
 
       - name: Clean Workflows
         env:
-          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEP_WORKFLOWS: 12
         run: |
           RUN_SKIP=$((KEEP_WORKFLOWS + 1))
