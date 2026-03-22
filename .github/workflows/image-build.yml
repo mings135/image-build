@@ -30,7 +30,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Clone Repo
+      - name: Initialize
         working-directory: ${{ env.APP_NAME }}
         run: |
           echo "--- 正在处理 $APP_NAME ---"
