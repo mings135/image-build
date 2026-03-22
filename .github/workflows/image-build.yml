@@ -37,11 +37,15 @@ jobs:
           
           case "$APP_NAME" in
             "sing-box")
+              echo "Clone sing-box..."
               git clone --depth=1 -b ${TAG_NAME} https://github.com/SagerNet/sing-box.git src
+              ls src
               ;;
             nginx-*)
               if [ -f "./Dockerfile" ]; then
+                echo "Change Dockerfile..."
                 sed -i "s@FROM nginx.*alpine@FROM nginx:${TAG_NAME}@" ./Dockerfile
+                cat ./Dockerfile | grep "FROM nginx"
               else
                 echo "❌ 没有找到 Dockerfile 文件"
                 exit 1
@@ -94,4 +98,32 @@ jobs:
             gh release create "$RELEASE_TAG" \
               --title "$RELEASE_TITLE" \
               --notes "$RELEASE_NOTES"
+          fi
+
+  clean:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Clean Releases by APP
+        env:
+          GH_TOKEN: ${{ secrets.MY_TOKEN }}
+          KEEP_RELEASES: 3
+        run: |
+          REL_SKIP=$((KEEP_RELEASES + 1))
+
+          echo "--- 正在清理旧的 Release 和 Tag ---"
+          RELEASES=$(gh release list --limit 100 --json tagName,isLatest \
+            --jq ".[] | select(.isLatest == false and (.tagName | startswith(\"$APP_NAME\"))) | .tagName" \
+            | tail -n +"$REL_SKIP") 
+          
+          if [ -n "$RELEASES" ]; then
+            echo "发现待删除 Release:
+          $RELEASES"
+            echo "$RELEASES" | xargs -r -I % -n 1 gh release delete % --yes --cleanup-tag
+          else
+            echo "✅ 没有需要删除的 Release"
           fi
