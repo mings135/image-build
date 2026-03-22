@@ -1,4 +1,4 @@
-name: sing-box
+name: image-build
 
 on:
   workflow_dispatch:
@@ -15,8 +15,8 @@ on:
         type: choice
         options:
           - sing-box
-          # - nginx-proxy
-          # - nginx-http
+          - nginx-proxy
+          - nginx-http
 
 env:
   APP_NAME: ${{ github.event.inputs.app_name }}
@@ -33,7 +33,25 @@ jobs:
       - name: Clone Repo
         working-directory: ${{ env.APP_NAME }}
         run: |
-          git clone --depth=1 -b ${{ env.TAG_NAME}} https://github.com/SagerNet/sing-box.git src
+          echo "--- 正在处理 $APP_NAME ---"
+          
+          case "$APP_NAME" in
+            "sing-box")
+              git clone --depth=1 -b ${TAG_NAME} https://github.com/SagerNet/sing-box.git src
+              ;;
+            nginx-*)
+              if [ -f "./Dockerfile" ]; then
+                sed -i "s@FROM nginx.*alpine@FROM nginx:${TAG_NAME}@" ./Dockerfile
+              else
+                echo "❌ 没有找到 Dockerfile 文件"
+                exit 1
+              fi
+              ;;
+            *)
+              echo "❌ 不支持的项目名称: $APP_NAME"
+              exit 1
+              ;;
+          esac
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
@@ -62,7 +80,7 @@ jobs:
 
       - name: Create Release
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.MY_TOKEN }}
           RELEASE_TAG: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_TITLE: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_NOTES: "Build from ${{ env.APP_NAME }}:${{ env.TAG_NAME }}"

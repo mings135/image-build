@@ -16,17 +16,17 @@ NOW_TIME=$(date +%s)
 # 4. 计算差值（24小时 = 86400秒）
 DIFF=$((NOW_TIME - RELEASE_TIME))
 
-if [ $DIFF -le 86400 ]; then
+if [ $DIFF -le 2108000 ]; then
   TAG_NAME=$(gh release list --repo $APP_REPO --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName')
-  if gh release view "$APP_NAME/$TAG_NAME" >/dev/null 2>&1; then
+  if gh release view "${APP_NAME}/${TAG_NAME}" >/dev/null 2>&1; then
     echo "版本已存在: $TAG_NAME"
-    echo "release_new=no" >> $GITHUB_ENV
+    echo "RELEASE_NEW=no" >> $GITHUB_ENV
   else
     echo "发现新版本: $TAG_NAME"
-    echo "release_new=yes" >> $GITHUB_ENV
-    echo "release_tag=$TAG_NAME" >> $GITHUB_ENV
+    echo "RELEASE_NEW=yes" >> $GITHUB_ENV
+    echo "RELEASE_TAG=$TAG_NAME" >> $GITHUB_ENV
   fi
 else
   echo "没有发现更新"
-  echo "release_new=no" >> $GITHUB_ENV
+  echo "RELEASE_NEW=no" >> $GITHUB_ENV
 fi

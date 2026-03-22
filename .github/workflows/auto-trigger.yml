@@ -13,27 +13,28 @@ jobs:
       matrix:
         include:
           - name: sing-box
-            dirctory: sing-box
+    
+    env:
+      APP_NAME: ${{ matrix.name }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v6
 
-      - name: Check build
+      - name: Check Release
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
-          APP_NAME: ${{ matrix.name }}
+          GH_TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
-          bash ${{ matrix.dirctory }}/auto.sh
+          bash "${APP_NAME}/auto.sh"
       
       - name: Trigger Workflow
-        if: env.release_new == 'yes'
+        if: env.RELEASE_NEW == 'yes'
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.MY_TOKEN }}
         run: |
-          gh workflow run "${{ matrix.name }}.yml" \
-            -f tag_name=${{ env.release_tag }} \
-            -f app_name=${{ matrix.name }}
+          gh workflow run image-build.yml --ref main \
+            -f tag_name="$RELEASE_TAG" \
+            -f app_name="$APP_NAME"
       
   clean:
     runs-on: ubuntu-latest
@@ -45,7 +46,7 @@ jobs:
 
       - name: Clean releases and workflows
         env:
-          GITHUB_TOKEN: ${{ secrets.MY_TOKEN }}
+          GH_TOKEN: ${{ secrets.MY_TOKEN }}
           KEEP_RELEASES: 9
           KEEP_WORKFLOWS: 12
         run: |
