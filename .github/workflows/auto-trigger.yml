@@ -59,12 +59,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           KEEP_WORKFLOWS: 12
         run: |
-          RUN_SKIP=$((KEEP_WORKFLOWS + 1))
-
-          echo "--- 正在清理旧的 Workflow 运行记录 ---"
-          RUN_IDS=$(gh run list --limit 100 --status completed --json databaseId \
-            --jq '.[].databaseId' \
-            | tail -n +"$RUN_SKIP")
+          echo "--- 正在清理旧的 Workflow 运行记录 ---"            
+          RUN_IDS=$(gh run list --limit 100 \
+            --status completed --json databaseId \
+            --jq ".[${KEEP_WORKFLOWS}:].[] | .databaseId")
           
           if [ -n "$RUN_IDS" ]; then
             echo "发现待删除运行记录 ID: 
