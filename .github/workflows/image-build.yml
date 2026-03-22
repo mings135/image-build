@@ -19,7 +19,7 @@ on:
           - nginx-http
 
 permissions:
-  contents: read
+  contents: write
 
 env:
   APP_NAME: ${{ inputs.app_name }}
