@@ -16,6 +16,8 @@ jobs:
       matrix:
         include:
           - name: sing-box
+          - name: nginx-proxy
+          - name: nginx-http
     
     env:
       APP_NAME: ${{ matrix.name }}

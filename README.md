@@ -170,7 +170,7 @@ docker compose exec sing-box yq -oj '.outbounds[] | select(.tag == "*-*")' /etc/
 
 **构建 nginx-proxy image**
 
-- 官方 nginx:*-alpine 修改版
+- 自动更新，官方 nginx:*-alpine 修改版
 
 - 代理 https 流量，根据 SNI，代理不同的 TCP 和 HTTP 服务(sing-box and web)
 
@@ -237,7 +237,7 @@ networks:
 
 **构建 nginx-http image**
 
-- 官方 nginx:*-alpine 修改版
+- 自动更新，官方 nginx:*-alpine 修改版
 
 - 代理 http 服务，用于后端 certbot 这类临时验证服务
 - docker-compose.yaml
