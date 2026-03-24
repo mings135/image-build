@@ -89,7 +89,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
           RELEASE_TITLE: ${{ env.APP_NAME }}/${{ env.TAG_NAME}}
-          RELEASE_NOTES: "Build from ${{ env.APP_NAME }}:${{ env.TAG_NAME }}"
+          RELEASE_NOTES: "Docker image: ${{ env.APP_NAME }}:${{ env.TAG_NAME }}"
         run: |
           echo "--- 正在处理 Release $RELEASE_TAG ---"    
           # 检查 Release 是否已经存在
