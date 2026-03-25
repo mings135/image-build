@@ -1,7 +1,32 @@
 #!/bin/bash
 set -e
 
-TAG_NAME=$(gh release list --repo nginx/nginx --exclude-pre-releases --limit 1 --json tagName --jq '.[0].tagName' | sed 's/release-//')
+IS_MAINLINE=0
+
+for i in $(seq 0 1); do
+  TAG_NAME=$(gh release list --repo nginx/nginx --exclude-pre-releases --limit 3 --json tagName --jq ".[$i].tagName" | sed 's/release-//')
+  [ -z "$TAG_NAME" ] && continue
+
+  if [[ $TAG_NAME =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+    minor=${BASH_REMATCH[2]}
+    if (( minor % 2 != 0 )); then
+      echo "Mainline 版本: $TAG_NAME"
+      IS_MAINLINE=1
+      break
+    fi
+  else
+    echo "ERROR: $TAG_NAME is not a valid tag name"
+    exit 1
+  fi
+  
+  sleep 1
+done
+
+if [ $IS_MAINLINE -eq 0 ]; then
+  echo "前 2 个都不是 Mainline 版本"
+  exit 0
+fi
+
 TAG_NAME="${TAG_NAME}-alpine"
 
 if curl -fsL https://hub.docker.com/v2/repositories/library/nginx/tags/${TAG_NAME} > /dev/null; then
